@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Chat · My AI App</title>
+  <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <div class="brand">
+        <span>My AI Chat</span>
+        <span id="model" class="model">模型：未加载</span>
+      </div>
+      <nav class="nav">
+        <span id="user" class="pill">用户：未登录</span>
+        <button id="switchUser" class="btn" type="button">切换用户</button>
+        <button id="newChat" class="btn" type="button">新会话</button>
+        <!-- <a href="/docs" target="_self">API 文档</a> -->
+      </nav>
+    </header>
+    <main class="main">
+      <div class="tabs">
+        <button id="tabChat" class="tabBtn active" type="button">聊天</button>
+        <button id="tabRag" class="tabBtn" type="button">上传文档</button>
+      </div>
+
+      <section id="chatPanel" class="tabPanel active">
+        <div class="ragLite">
+          <label class="check">
+            <input id="ragEnabled" type="checkbox">
+            聊天中启用知识库
+          </label>
+          <span id="ragStatus" class="pill">知识库：未导入</span>
+        </div>
+        <div id="messages" class="messages"></div>
+        <form id="form" class="composer">
+          <input id="input" type="text" placeholder="输入问题，按 Enter 发送" autocomplete="off">
+          <button id="send" type="submit">发送</button>
+        </form>
+      </section>
+
+      <section id="ragPanel" class="tabPanel">
+        <section class="rag">
+          <div class="ragRow">
+            <button id="ragIngest" class="btn" type="button">导入文本</button>
+            <span id="ragStatus2" class="pill">把文本粘贴后点击导入</span>
+          </div>
+          <input id="ragTitle" class="ragTitle" type="text" placeholder="标题（可选）" autocomplete="off">
+          <textarea id="ragText" class="ragText" placeholder="把知识库文本粘贴到这里（例如产品说明、FAQ、规则等）"></textarea>
+        </section>
+      </section>
+    </main>
+  </div>
+  <script src="/static/app.js"></script>
+</body>
+</html>
