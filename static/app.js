@@ -17,6 +17,11 @@ const el = {
   tabRag: document.getElementById('tabRag'),
   chatPanel: document.getElementById('chatPanel'),
   ragPanel: document.getElementById('ragPanel'),
+  // 文档上传相关
+  fileUpload: document.getElementById('fileUpload'),
+  docList: document.getElementById('docList'),
+  uploadStatus: document.getElementById('uploadStatus'),
+  docSearch: document.getElementById('docSearch'),
 }
 
 // 下面这些 localStorage key 是"前端本地模拟"的用户/会话系统：
@@ -329,3 +334,187 @@ if(el.newChat){
     clearMessages();
   });
 }
+
+// 格式化文件大小
+function formatFileSize(bytes) {
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+}
+
+// 格式化日期
+function formatDate(dateStr) {
+  const date = new Date(dateStr);
+  return date.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  });
+}
+
+// 显示上传状态
+function showUploadStatus(message, type = 'progress') {
+  if (!el.uploadStatus) return;
+  el.uploadStatus.style.display = 'block';
+  el.uploadStatus.className = 'upload-status ' + type;
+  el.uploadStatus.textContent = message;
+}
+
+// 隐藏上传状态
+function hideUploadStatus() {
+  if (!el.uploadStatus) return;
+  el.uploadStatus.style.display = 'none';
+}
+
+// 加载文档列表
+async function loadDocumentList() {
+  if (!el.docList) return;
+
+  try {
+    const user = getCurrentUser();
+    const res = await fetch(`/documents?user_id=${encodeURIComponent(user.id)}`);
+    const data = await res.json();
+
+    if (!data.ok || !data.documents) {
+      el.docList.innerHTML = `
+        <tr>
+          <td colspan="4" style="text-align: center; padding: 40px; color: #9ca3af;">
+            加载失败
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    if (data.documents.length === 0) {
+      el.docList.innerHTML = `
+        <tr>
+          <td colspan="4" style="text-align: center; padding: 40px; color: #9ca3af;">
+            暂无文档，请上传
+          </td>
+        </tr>
+      `;
+      return;
+    }
+
+    el.docList.innerHTML = data.documents.map(doc => {
+      const ext = (doc.filename || '').split('.').pop()?.toLowerCase() || '';
+      let icon = '📄';
+      let iconClass = '';
+
+      if (ext === 'pdf') { icon = '📕'; iconClass = 'pdf'; }
+      else if (['doc', 'docx'].includes(ext)) { icon = '📘'; iconClass = 'docx'; }
+      else if (['ppt', 'pptx'].includes(ext)) { icon = '📙'; iconClass = 'pptx'; }
+      else if (['txt', 'md'].includes(ext)) { icon = '📄'; iconClass = 'txt'; }
+
+      return `
+        <tr>
+          <td>
+            <div class="file-info">
+              <div class="file-icon ${iconClass}">${icon}</div>
+              <div>
+                <div class="file-name">${doc.title || doc.filename || '未命名文档'}</div>
+              </div>
+            </div>
+          </td>
+          <td>${doc.file_size ? formatFileSize(doc.file_size) : '-'}</td>
+          <td>${doc.created_at ? formatDate(doc.created_at) : '-'}</td>
+          <td>
+            <div class="file-actions">
+              <button class="action-btn" title="下载" onclick="downloadDocument(${doc.id})">⬇️</button>
+              <button class="action-btn" title="删除" onclick="deleteDocument(${doc.id})">🗑️</button>
+            </div>
+          </td>
+        </tr>
+      `;
+    }).join('');
+
+  } catch (e) {
+    console.error('加载文档列表失败:', e);
+    el.docList.innerHTML = `
+      <tr>
+        <td colspan="4" style="text-align: center; padding: 40px; color: #9ca3af;">
+          加载失败
+        </td>
+      </tr>
+    `;
+  }
+}
+
+// 上传文件
+async function uploadFile(file) {
+  try {
+    showUploadStatus(`正在上传: ${file.name}...`, 'progress');
+
+    const user = getCurrentUser();
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('user_id', user.id);
+
+    const res = await fetch('/documents/upload', {
+      method: 'POST',
+      body: formData
+    });
+
+    const data = await res.json();
+
+    if (!data.ok) {
+      throw new Error(data.error || '上传失败');
+    }
+
+    showUploadStatus(`上传成功: ${file.name}`, 'success');
+    setTimeout(hideUploadStatus, 2000);
+
+    // 刷新文档列表
+    loadDocumentList();
+    setRagStatus('知识库：已上传文档');
+
+  } catch (e) {
+    showUploadStatus(`上传失败: ${e.message}`, 'error');
+  }
+}
+
+// 文件选择事件
+if (el.fileUpload) {
+  el.fileUpload.addEventListener('change', (ev) => {
+    const files = ev.target.files;
+    if (!files || files.length === 0) return;
+
+    // 上传所有选择的文件
+    for (const file of files) {
+      uploadFile(file);
+    }
+
+    // 清空input，允许重复选择同一文件
+    ev.target.value = '';
+  });
+}
+
+// 切换到文档管理面板时刷新列表
+let originalSwitchTab = switchTab;
+switchTab = function(tab) {
+  originalSwitchTab(tab);
+  if (tab === 'rag') {
+    loadDocumentList();
+  }
+};
+
+// 初始加载时，如果在文档管理面板就加载列表
+if (el.tabRag && el.tabRag.classList.contains('active')) {
+  loadDocumentList();
+}
+
+// 下载文档（占位函数，后续实现）
+window.downloadDocument = function(id) {
+  alert('下载功能待实现');
+};
+
+// 删除文档（占位函数，后续实现）
+window.deleteDocument = function(id) {
+  if (confirm('确定要删除这个文档吗？')) {
+    alert('删除功能待实现');
+  }
+};
+

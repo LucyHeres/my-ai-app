@@ -35,9 +35,28 @@ function initDb() {
       id INTEGER PRIMARY KEY AUTOINCREMENT,
       user_id TEXT NOT NULL,
       title TEXT,
+      filename TEXT,
+      file_size INTEGER,
+      file_path TEXT,
+      mime_type TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
   `);
+
+  // 添加新字段（兼容旧数据库）
+  const docCols = db.prepare(`PRAGMA table_info(rag_documents)`).all().map((r) => r.name);
+  if (!docCols.includes('filename')) {
+    db.exec(`ALTER TABLE rag_documents ADD COLUMN filename TEXT;`);
+  }
+  if (!docCols.includes('file_size')) {
+    db.exec(`ALTER TABLE rag_documents ADD COLUMN file_size INTEGER;`);
+  }
+  if (!docCols.includes('file_path')) {
+    db.exec(`ALTER TABLE rag_documents ADD COLUMN file_path TEXT;`);
+  }
+  if (!docCols.includes('mime_type')) {
+    db.exec(`ALTER TABLE rag_documents ADD COLUMN mime_type TEXT;`);
+  }
 
   db.exec(`
     CREATE TABLE IF NOT EXISTS rag_chunks (
@@ -70,6 +89,12 @@ const stmtInsertMessage = db.prepare(
 const stmtLoadHistory = db.prepare(
   `SELECT role, content FROM messages WHERE user_id = ? AND session_id = ? ORDER BY id DESC LIMIT ?`
 );
+const stmtInsertDocument = db.prepare(
+  `INSERT INTO rag_documents (user_id, title, filename, file_size, file_path, mime_type) VALUES (?, ?, ?, ?, ?, ?)`
+);
+const stmtLoadDocuments = db.prepare(
+  `SELECT id, title, filename, file_size, file_path, mime_type, created_at FROM rag_documents WHERE user_id = ? ORDER BY id DESC`
+);
 
 function saveMessage(userId, sessionId, role, content) {
   stmtInsertMessage.run(userId, sessionId, role, content);
@@ -81,9 +106,20 @@ function loadHistory(userId, sessionId, limit) {
   return rows.map((r) => ({ role: r.role, content: r.content }));
 }
 
+function saveDocument(userId, title, filename, fileSize, filePath, mimeType) {
+  const result = stmtInsertDocument.run(userId, title, filename, fileSize, filePath, mimeType);
+  return { document_id: result.lastInsertRowid };
+}
+
+function loadDocuments(userId) {
+  return stmtLoadDocuments.all(userId);
+}
+
 export {
   db,
   initDb,
   saveMessage,
   loadHistory,
+  saveDocument,
+  loadDocuments,
 };

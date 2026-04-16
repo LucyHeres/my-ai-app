@@ -1,9 +1,11 @@
 import path from 'path';
+import fs from 'fs';
 import express from 'express';
+import multer from 'multer';
 import 'dotenv/config';
 import { fileURLToPath } from 'url';
 import { ChatOpenAI } from '@langchain/openai';
-import { initDb, saveMessage, loadHistory } from './db/db.js';
+import { initDb, saveMessage, loadHistory, saveDocument, loadDocuments } from './db/db.js';
 import { ragIngest, RAG_TOP_K } from './rag/rag.js';
 import { ensureEmbeddingsForDocument, vectorSearch } from './rag/rag_vector.js';
 import { createOutputSanitizer } from './utils/output_sanitize.js';
@@ -14,6 +16,32 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(express.json({ limit: '2mb' }));
+
+// 确保上传目录存在
+const UPLOAD_DIR = path.join(__dirname, '..', 'data', 'uploads');
+if (!fs.existsSync(UPLOAD_DIR)) {
+  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+}
+
+// 配置 multer 文件上传
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, UPLOAD_DIR);
+  },
+  filename: (req, file, cb) => {
+    // 生成唯一文件名，保留原扩展名
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    const ext = path.extname(file.originalname);
+    cb(null, uniqueSuffix + ext);
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 50 * 1024 * 1024 // 50MB 限制
+  }
+});
 
 const DEEPSEEK_API_KEY = process.env.DEEPSEEK_API_KEY;
 const DEEPSEEK_BASE_URL = process.env.DEEPSEEK_BASE_URL;
@@ -84,6 +112,62 @@ app.post('/rag/ingest', (req, res) => {
     console.error('[RAG] 文档生成向量失败:', e?.message || String(e));
   });
   return res.json({ ok: true, ...result, embeddings: { status: 'scheduled' } });
+});
+
+// 文件上传端点
+app.post('/documents/upload', upload.single('file'), (req, res) => {
+  try {
+    const userId = String(req.body?.user_id || '').trim();
+    const title = req.body?.title ? String(req.body.title).trim() : null;
+
+    if (!userId) {
+      // 如果没传user_id，删除已上传的文件并返回错误
+      if (req.file) fs.unlinkSync(req.file.path);
+      return res.status(400).json({ ok: false, error: 'user_id 不能为空' });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ ok: false, error: '请选择要上传的文件' });
+    }
+
+    // 保存文档信息到数据库
+    const docTitle = title || req.file.originalname;
+    const result = saveDocument(
+      userId,
+      docTitle,
+      req.file.originalname,
+      req.file.size,
+      req.file.path,
+      req.file.mimetype
+    );
+
+    return res.json({
+      ok: true,
+      document_id: result.document_id,
+      filename: req.file.originalname,
+      size: req.file.size,
+      title: docTitle
+    });
+  } catch (e) {
+    console.error('[Upload] 上传失败:', e?.message || String(e));
+    // 清理已上传的文件
+    if (req.file && fs.existsSync(req.file.path)) {
+      fs.unlinkSync(req.file.path);
+    }
+    return res.status(500).json({ ok: false, error: '上传失败' });
+  }
+});
+
+// 获取文档列表端点
+app.get('/documents', (req, res) => {
+  const userId = String(req.query?.user_id || '').trim();
+
+  if (!userId) {
+    return res.status(400).json({ ok: false, error: 'user_id 不能为空' });
+  }
+
+  const documents = loadDocuments(userId);
+  return res.json({ ok: true, documents });
 });
 
 app.post('/chat', async (req, res) => {
