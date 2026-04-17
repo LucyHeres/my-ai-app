@@ -22,6 +22,14 @@ const el = {
   docList: document.getElementById('docList'),
   uploadStatus: document.getElementById('uploadStatus'),
   docSearch: document.getElementById('docSearch'),
+  // 预览弹窗相关
+  previewModal: document.getElementById('previewModal'),
+  previewTitle: document.getElementById('previewTitle'),
+  previewInfo: document.getElementById('previewInfo'),
+  previewContent: document.getElementById('previewContent'),
+  previewClose: document.getElementById('previewClose'),
+  previewCloseBtn: document.getElementById('previewCloseBtn'),
+  previewDownload: document.getElementById('previewDownload'),
 }
 
 // 下面这些 localStorage key 是"前端本地模拟"的用户/会话系统：
@@ -423,6 +431,7 @@ async function loadDocumentList() {
           <td>${doc.created_at ? formatDate(doc.created_at) : '-'}</td>
           <td>
             <div class="file-actions">
+              <button class="action-btn" title="预览" onclick="previewDocument(${doc.id})">👁️</button>
               <button class="action-btn" title="下载" onclick="downloadDocument(${doc.id})">⬇️</button>
               <button class="action-btn" title="删除" onclick="deleteDocument(${doc.id})">🗑️</button>
             </div>
@@ -506,15 +515,164 @@ if (el.tabRag && el.tabRag.classList.contains('active')) {
   loadDocumentList();
 }
 
-// 下载文档（占位函数，后续实现）
-window.downloadDocument = function(id) {
-  alert('下载功能待实现');
+// 当前预览的文档ID
+let currentPreviewDocId = null;
+
+// 显示预览弹窗
+function showPreviewModal() {
+  if (el.previewModal) {
+    el.previewModal.classList.remove('hidden');
+  }
+}
+
+// 隐藏预览弹窗
+function hidePreviewModal() {
+  if (el.previewModal) {
+    el.previewModal.classList.add('hidden');
+  }
+  currentPreviewDocId = null;
+}
+
+// 预览文档
+window.previewDocument = async function(id) {
+  try {
+    const user = getCurrentUser();
+    const res = await fetch(`/documents/${id}?user_id=${encodeURIComponent(user.id)}`);
+    const data = await res.json();
+
+    if (!data.ok || !data.document) {
+      throw new Error(data.error || '获取文档失败');
+    }
+
+    const doc = data.document;
+    currentPreviewDocId = id;
+
+    // 设置标题
+    if (el.previewTitle) {
+      el.previewTitle.textContent = doc.title || doc.filename || '文档预览';
+    }
+
+    // 设置文档信息
+    if (el.previewInfo) {
+      el.previewInfo.innerHTML = `
+        <div class="modal-info-item">
+          <div class="modal-info-label">文件名</div>
+          <div class="modal-info-value">${doc.filename || '-'}</div>
+        </div>
+        <div class="modal-info-item">
+          <div class="modal-info-label">大小</div>
+          <div class="modal-info-value">${doc.file_size ? formatFileSize(doc.file_size) : '-'}</div>
+        </div>
+        <div class="modal-info-item">
+          <div class="modal-info-label">上传时间</div>
+          <div class="modal-info-value">${doc.created_at ? formatDate(doc.created_at) : '-'}</div>
+        </div>
+      `;
+    }
+
+    // 设置文档内容
+    if (el.previewContent) {
+      if (doc.can_preview && doc.content) {
+        el.previewContent.innerHTML = `<pre>${escapeHtml(doc.content)}</pre>`;
+      } else {
+        el.previewContent.innerHTML = `
+          <div class="modal-no-preview">
+            <div class="modal-no-preview-icon">📄</div>
+            <div>该文件类型暂不支持在线预览，请下载后查看</div>
+          </div>
+        `;
+      }
+    }
+
+    showPreviewModal();
+  } catch (e) {
+    console.error('预览文档失败:', e);
+    alert('预览失败: ' + (e.message || '未知错误'));
+  }
 };
 
-// 删除文档（占位函数，后续实现）
-window.deleteDocument = function(id) {
-  if (confirm('确定要删除这个文档吗？')) {
-    alert('删除功能待实现');
+// HTML转义
+function escapeHtml(text) {
+  const div = document.createElement('div');
+  div.textContent = text;
+  return div.innerHTML;
+}
+
+// 下载文档
+window.downloadDocument = function(id) {
+  try {
+    const user = getCurrentUser();
+    const url = `/documents/${id}/download?user_id=${encodeURIComponent(user.id)}`;
+    window.open(url, '_blank');
+  } catch (e) {
+    console.error('下载文档失败:', e);
+    alert('下载失败: ' + (e.message || '未知错误'));
+  }
+};
+
+// 预览弹窗关闭按钮事件
+if (el.previewClose) {
+  el.previewClose.addEventListener('click', hidePreviewModal);
+}
+
+if (el.previewCloseBtn) {
+  el.previewCloseBtn.addEventListener('click', hidePreviewModal);
+}
+
+// 点击遮罩层关闭弹窗
+if (el.previewModal) {
+  el.previewModal.addEventListener('click', (e) => {
+    if (e.target === el.previewModal) {
+      hidePreviewModal();
+    }
+  });
+}
+
+// 预览弹窗中的下载按钮
+if (el.previewDownload) {
+  el.previewDownload.addEventListener('click', () => {
+    if (currentPreviewDocId) {
+      window.downloadDocument(currentPreviewDocId);
+    }
+  });
+}
+
+// ESC键关闭弹窗
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    hidePreviewModal();
+  }
+});
+
+// 删除文档
+window.deleteDocument = async function(id) {
+  if (!confirm('确定要删除这个文档吗？删除后不可恢复。')) {
+    return;
+  }
+
+  try {
+    const user = getCurrentUser();
+    const res = await fetch(`/documents/${id}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ user_id: user.id })
+    });
+
+    const data = await res.json();
+
+    if (!data.ok) {
+      throw new Error(data.error || '删除失败');
+    }
+
+    // 刷新文档列表
+    loadDocumentList();
+    setRagStatus('知识库：已删除文档');
+
+  } catch (e) {
+    console.error('删除文档失败:', e);
+    alert('删除失败: ' + (e.message || '未知错误'));
   }
 };
 

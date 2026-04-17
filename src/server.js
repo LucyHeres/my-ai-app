@@ -5,7 +5,7 @@ import multer from 'multer';
 import 'dotenv/config';
 import { fileURLToPath } from 'url';
 import { ChatOpenAI } from '@langchain/openai';
-import { initDb, saveMessage, loadHistory, saveDocument, loadDocuments } from './db/db.js';
+import { initDb, saveMessage, loadHistory, saveDocument, loadDocuments, getDocument, deleteDocument } from './db/db.js';
 import { ragIngest, RAG_TOP_K } from './rag/rag.js';
 import { ensureEmbeddingsForDocument, vectorSearch } from './rag/rag_vector.js';
 import { createOutputSanitizer } from './utils/output_sanitize.js';
@@ -23,12 +23,25 @@ if (!fs.existsSync(UPLOAD_DIR)) {
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 }
 
+// 修复文件名编码
+function fixFilenameEncoding(filename) {
+  if (!filename) return filename;
+  try {
+    // 尝试从latin1转utf8
+    return Buffer.from(filename, 'latin1').toString('utf8');
+  } catch {
+    return filename;
+  }
+}
+
 // 配置 multer 文件上传
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {
     cb(null, UPLOAD_DIR);
   },
   filename: (req, file, cb) => {
+    // 修复文件名编码
+    file.originalname = fixFilenameEncoding(file.originalname);
     // 生成唯一文件名，保留原扩展名
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const ext = path.extname(file.originalname);
@@ -168,6 +181,133 @@ app.get('/documents', (req, res) => {
 
   const documents = loadDocuments(userId);
   return res.json({ ok: true, documents });
+});
+
+// 删除文档端点
+app.delete('/documents/:id', (req, res) => {
+  try {
+    const docId = Number(req.params.id);
+    const userId = String(req.body?.user_id || req.query?.user_id || '').trim();
+
+    if (!userId) {
+      return res.status(400).json({ ok: false, error: 'user_id 不能为空' });
+    }
+
+    if (!docId || isNaN(docId)) {
+      return res.status(400).json({ ok: false, error: '无效的文档ID' });
+    }
+
+    const result = deleteDocument(docId, userId);
+
+    if (!result.deleted) {
+      return res.status(404).json({ ok: false, error: result.error || '删除失败' });
+    }
+
+    // 删除磁盘上的文件
+    if (result.filePath && fs.existsSync(result.filePath)) {
+      try {
+        fs.unlinkSync(result.filePath);
+      } catch (e) {
+        console.error('[Delete] 删除文件失败:', e?.message || String(e));
+      }
+    }
+
+    return res.json({ ok: true, document_id: docId, deleted: true });
+  } catch (e) {
+    console.error('[Delete] 删除文档失败:', e?.message || String(e));
+    return res.status(500).json({ ok: false, error: '删除失败' });
+  }
+});
+
+// 获取文档详情（用于预览）
+app.get('/documents/:id', (req, res) => {
+  try {
+    const docId = Number(req.params.id);
+    const userId = String(req.query?.user_id || '').trim();
+
+    if (!userId) {
+      return res.status(400).json({ ok: false, error: 'user_id 不能为空' });
+    }
+
+    if (!docId || isNaN(docId)) {
+      return res.status(400).json({ ok: false, error: '无效的文档ID' });
+    }
+
+    const doc = getDocument(docId, userId);
+    if (!doc) {
+      return res.status(404).json({ ok: false, error: '文档不存在' });
+    }
+
+    // 尝试读取文件内容（仅支持文本文件预览）
+    let content = null;
+    let canPreview = false;
+    const ext = path.extname(doc.filename || '').toLowerCase();
+    const textExts = ['.txt', '.md', '.json', '.csv', '.html', '.htm', '.xml'];
+
+    if (textExts.includes(ext) && doc.file_path && fs.existsSync(doc.file_path)) {
+      try {
+        content = fs.readFileSync(doc.file_path, 'utf8');
+        canPreview = true;
+      } catch (e) {
+        console.error('[Preview] 读取文件失败:', e?.message || String(e));
+      }
+    }
+
+    return res.json({
+      ok: true,
+      document: {
+        id: doc.id,
+        title: doc.title,
+        filename: doc.filename,
+        file_size: doc.file_size,
+        mime_type: doc.mime_type,
+        created_at: doc.created_at,
+        can_preview: canPreview,
+        content: content
+      }
+    });
+  } catch (e) {
+    console.error('[Preview] 获取文档失败:', e?.message || String(e));
+    return res.status(500).json({ ok: false, error: '获取文档失败' });
+  }
+});
+
+// 下载文档
+app.get('/documents/:id/download', (req, res) => {
+  try {
+    const docId = Number(req.params.id);
+    const userId = String(req.query?.user_id || '').trim();
+
+    if (!userId) {
+      return res.status(400).json({ ok: false, error: 'user_id 不能为空' });
+    }
+
+    if (!docId || isNaN(docId)) {
+      return res.status(400).json({ ok: false, error: '无效的文档ID' });
+    }
+
+    const doc = getDocument(docId, userId);
+    if (!doc) {
+      return res.status(404).json({ ok: false, error: '文档不存在' });
+    }
+
+    if (!doc.file_path || !fs.existsSync(doc.file_path)) {
+      return res.status(404).json({ ok: false, error: '文件不存在' });
+    }
+
+    // 设置下载头
+    const filename = encodeURIComponent(doc.filename || 'download');
+    res.setHeader('Content-Disposition', `attachment; filename*=UTF-8''${filename}`);
+    if (doc.mime_type) {
+      res.setHeader('Content-Type', doc.mime_type);
+    }
+
+    // 发送文件
+    return res.sendFile(path.resolve(doc.file_path));
+  } catch (e) {
+    console.error('[Download] 下载文档失败:', e?.message || String(e));
+    return res.status(500).json({ ok: false, error: '下载失败' });
+  }
 });
 
 app.post('/chat', async (req, res) => {

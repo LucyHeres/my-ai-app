@@ -91,6 +91,25 @@
         </section>
       </main>
     </div>
+
+    <!-- 预览弹窗 -->
+    <div id="previewModal" class="modal-overlay hidden">
+      <div class="modal">
+        <div class="modal-header">
+          <h3 id="previewTitle" class="modal-title">文档预览</h3>
+          <button id="previewClose" class="modal-close" type="button">✕</button>
+        </div>
+        <div class="modal-body">
+          <div id="previewInfo" class="modal-info"></div>
+          <div id="previewContent" class="modal-content"></div>
+        </div>
+        <div class="modal-footer">
+          <button id="previewDownload" class="btn btn-secondary" type="button">⬇️ 下载</button>
+          <button id="previewCloseBtn" class="btn btn-primary" type="button">关闭</button>
+        </div>
+      </div>
+    </div>
+
     <script src="/static/app.js"></script>
   </body>
 </html>

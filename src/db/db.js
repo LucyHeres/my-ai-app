@@ -95,6 +95,18 @@ const stmtInsertDocument = db.prepare(
 const stmtLoadDocuments = db.prepare(
   `SELECT id, title, filename, file_size, file_path, mime_type, created_at FROM rag_documents WHERE user_id = ? ORDER BY id DESC`
 );
+const stmtGetDocument = db.prepare(
+  `SELECT id, user_id, title, filename, file_size, file_path, mime_type FROM rag_documents WHERE id = ? AND user_id = ?`
+);
+const stmtDeleteDocument = db.prepare(
+  `DELETE FROM rag_documents WHERE id = ? AND user_id = ?`
+);
+const stmtDeleteChunksByDoc = db.prepare(
+  `DELETE FROM rag_chunks WHERE document_id = ? AND user_id = ?`
+);
+const stmtDeleteEmbeddingsByDoc = db.prepare(
+  `DELETE FROM rag_chunk_embeddings WHERE chunk_id IN (SELECT id FROM rag_chunks WHERE document_id = ? AND user_id = ?)`
+);
 
 function saveMessage(userId, sessionId, role, content) {
   stmtInsertMessage.run(userId, sessionId, role, content);
@@ -115,6 +127,27 @@ function loadDocuments(userId) {
   return stmtLoadDocuments.all(userId);
 }
 
+function getDocument(docId, userId) {
+  return stmtGetDocument.get(docId, userId);
+}
+
+function deleteDocument(docId, userId) {
+  const doc = getDocument(docId, userId);
+  if (!doc) return { deleted: false, error: '文档不存在' };
+
+  const tx = db.transaction(() => {
+    // 删除向量
+    stmtDeleteEmbeddingsByDoc.run(docId, userId);
+    // 删除chunks
+    stmtDeleteChunksByDoc.run(docId, userId);
+    // 删除文档记录
+    stmtDeleteDocument.run(docId, userId);
+    return { deleted: true, filePath: doc.file_path };
+  });
+
+  return tx();
+}
+
 export {
   db,
   initDb,
@@ -122,4 +155,6 @@ export {
   loadHistory,
   saveDocument,
   loadDocuments,
+  getDocument,
+  deleteDocument,
 };
