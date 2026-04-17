@@ -173,62 +173,70 @@ async function send(text){
     const bubble = append('ai', '');
 
     // 获取响应体的读取器，用于流式读取数据
-    // 就像接了一根水管，准备从里面接水
     const reader = res.body.getReader();
     // TextDecoder 用于将二进制数据流解码为文本
     const decoder = new TextDecoder();
     let buffer = '';
+    
+    // 打字机效果相关变量
+    let textQueue = [];
+    let isTyping = false;
+    
+    // 打字机效果函数：逐个字符显示文本
+    function typeWriter(text) {
+      for (const char of text) {
+        textQueue.push(char);
+      }
+      
+      if (!isTyping) {
+        isTyping = true;
+        processQueue();
+      }
+    }
+    
+    // 处理字符队列
+    function processQueue() {
+      if (textQueue.length === 0) {
+        isTyping = false;
+        return;
+      }
+      
+      const char = textQueue.shift();
+      bubble.textContent += char;
+      el.messages.scrollTop = el.messages.scrollHeight;
+      
+      // 设置打字速度：每个字符间隔 30ms
+      setTimeout(processQueue, 30);
+    }
 
-    // 循环读取流数据：只要流没结束，就一直循环
+    // 循环读取流数据
     while(true) {
-      // await reader.read() 类似从水管接一杯水
-      // 它会暂停代码执行，直到接收到新的一块二进制数据 (value)
       const { done, value } = await reader.read();
 
-      // done 为 true 表示水流干了（后端结束响应）
       if (done) break;
 
-      // 1. 解码：将二进制数据块 (Uint8Array) 转为字符串
-      // 注意：这里只是拿到了一小段文本，可能是完整的 JSON，也可能只是一半（比如 "{"text": "你好"）
       buffer += decoder.decode(value, { stream: true });
-
-      // 2. 切分：SSE 协议规定每条消息以双换行符分隔 (\n\n)
-      // 就像我们在聊天软件里按回车发送一样，后端每发完一句话会加两个换行
-      // 我们用正则表达式 /\r\n\r\n|\n\n/ 来找这个分隔符
       const parts = buffer.split(/\r\n\r\n|\n\n/);
-
-      // 3. 缓存残留：数组最后一个元素通常是不完整的（因为可能数据还没传完）
-      // 比如收到了 "data: {...}\n\ndata: {...", 最后那个 "data: {..." 要留给下一次拼接
       buffer = parts.pop();
 
-      // 4. 处理每一条完整的消息
       for (const part of parts) {
-        // 有些消息可能包含多行（比如 data: ... \n event: ...），这里再按行拆分
         const lines = part.split(/\r\n|\n/);
 
         for (const line of lines) {
-          // SSE 格式规定数据行必须以 "data: " 开头
           if (line.startsWith('data: ')) {
-            const jsonStr = line.slice(6); // 去掉 "data: " 前缀，拿到后面的 JSON 字符串
+            const jsonStr = line.slice(6);
             try {
-              // 5. 解析 JSON：将字符串转为 JS 对象
               const data = JSON.parse(jsonStr);
 
-              // 如果后端返回错误信息
               if (data.error) {
                 throw new Error(data.error);
               }
 
-              // 6. 核心渲染逻辑：将新收到的文本"追加"到气泡中
-              // bubble.textContent 原来是 "你"，收到 "好" 后变成 "你好"
-              // 这就是为什么你会看到字是一个个蹦出来的，而不是一次性显示
               if (data.text) {
-                bubble.textContent += data.text;
-                // 自动滚动到底部，保证用户总能看到最新内容
-                el.messages.scrollTop = el.messages.scrollHeight;
+                // 使用打字机效果显示文本
+                typeWriter(data.text);
               }
 
-              // 更新模型名称展示
               if (data.model) {
                 el.model.textContent = `模型：${data.model}`;
               }
@@ -240,8 +248,6 @@ async function send(text){
       }
     }
   }catch(e){
-    // 如果气泡里已经有内容了，追加错误信息；否则新建气泡
-    // 简单起见，这里直接追加或新建
     const lastMsg = el.messages.lastElementChild;
     if (lastMsg && lastMsg.classList.contains('ai') && lastMsg.querySelector('.bubble')?.textContent === '') {
        lastMsg.querySelector('.bubble').textContent = `错误：${e.message}`;

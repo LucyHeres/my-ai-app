@@ -1,39 +1,29 @@
 import { db } from '../db/db.js';
+import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 
-const RAG_CHUNK_SIZE = Number.parseInt(process.env.RAG_CHUNK_SIZE || '800', 10);
-const RAG_CHUNK_OVERLAP = Number.parseInt(process.env.RAG_CHUNK_OVERLAP || '120', 10);
-const RAG_TOP_K = Number.parseInt(process.env.RAG_TOP_K || '4', 10);
+const RAG_CHUNK_SIZE = Number.parseInt(process.env.RAG_CHUNK_SIZE || '500', 10);
+const RAG_CHUNK_OVERLAP = Number.parseInt(process.env.RAG_CHUNK_OVERLAP || '100', 10);
 
-// 例子 text = "ABCDEFGHIJ" ， chunkSize = 4 ， overlap = 2
-// - 切出来大概是： ABCD 、 CDEF 、 EFGH 、 GHIJ
-function chunkText(text, chunkSize, overlap) {
-  const t = String(text || '').trim();
-  if (!t) return [];
-  if (chunkSize <= 0) return [t];
+const splitter = new RecursiveCharacterTextSplitter({
+  chunkSize: 500,
+  chunkOverlap: 100,
+  separators: ['\n\n', '\n', '。', '，', ' ', ''],
+});
 
-  const safeOverlap = Math.max(0, Math.min(overlap, chunkSize - 1));
-  const out = [];
-  let i = 0;
-  while (i < t.length) {
-    const j = Math.min(t.length, i + chunkSize);
-    out.push(t.slice(i, j).trim());
-    if (j >= t.length) break;
-    i = Math.max(0, j - safeOverlap);
-  }
-  return out.filter(Boolean);
+async function chunkText(text) {
+  const splitTexts = await splitter.splitText(String(text || '').trim());
+  console.log("✅ 文档读取成功，共", splitTexts.length, "段");
+  return splitTexts;
 }
 
-const stmtInsertDoc = db.prepare(`INSERT INTO rag_documents (user_id, title) VALUES (?, ?)`);
 const stmtInsertChunk = db.prepare(
   `INSERT INTO rag_chunks (user_id, document_id, chunk_index, content) VALUES (?, ?, ?, ?)`
 );
 
-function ragIngest(userId, title, text) {
-  const chunks = chunkText(text, RAG_CHUNK_SIZE, RAG_CHUNK_OVERLAP);
+async function ragIngest(userId, docId, title, text) {
+  const chunks = await chunkText(text);
 
   const tx = db.transaction(() => {
-    const doc = stmtInsertDoc.run(userId, title || null);
-    const docId = doc.lastInsertRowid;
     for (let idx = 0; idx < chunks.length; idx += 1) {
       stmtInsertChunk.run(userId, docId, idx, chunks[idx]);
     }
@@ -44,6 +34,5 @@ function ragIngest(userId, title, text) {
 }
 
 export {
-  RAG_TOP_K,
   ragIngest,
 };

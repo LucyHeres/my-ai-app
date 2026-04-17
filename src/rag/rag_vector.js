@@ -1,6 +1,9 @@
 import OpenAI from 'openai';
 import { db } from '../db/db.js';
 
+const RAG_TOP_K = 10;
+
+
 /**
  * 把向量统一转成 Float32Array，方便后续计算和存库。
  * @param {number[]|Float32Array} v
@@ -163,10 +166,9 @@ async function ensureEmbeddingsForDocument(userId, documentId, opts) {
  * @param {{client?: OpenAI, model?: string}=} opts
  * @returns {Promise<Array<{score:number, chunk_id:number, content:string}>>}
  */
-async function vectorSearch(userId, query, topK, opts) {
+async function vectorSearch(userId, query, opts) {
   const client = opts?.client || createEmbeddingClient();
   const model = opts?.model || getEmbeddingModel();
-  const k = Number(topK) || 4;
 
   const qvec = await embedText(client, model, query);
   const rows = stmtSelectEmbeddingsForUser.all(userId);
@@ -179,7 +181,7 @@ async function vectorSearch(userId, query, topK, opts) {
   }));
 
   scored.sort((a, b) => b.score - a.score);
-  return scored.slice(0, k);
+  return scored.slice(0, RAG_TOP_K);
 }
 
 export {

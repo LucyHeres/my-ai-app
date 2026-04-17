@@ -6,9 +6,10 @@ import 'dotenv/config';
 import { fileURLToPath } from 'url';
 import { ChatOpenAI } from '@langchain/openai';
 import { initDb, saveMessage, loadHistory, saveDocument, loadDocuments, getDocument, deleteDocument } from './db/db.js';
-import { ragIngest, RAG_TOP_K } from './rag/rag.js';
-import { ensureEmbeddingsForDocument, vectorSearch } from './rag/rag_vector.js';
 import { createOutputSanitizer } from './utils/output_sanitize.js';
+import { ragIngest } from './rag/rag.js';
+import { loadDocument } from './rag/rag_document_loader.js';
+import { ensureEmbeddingsForDocument, vectorSearch } from './rag/rag_vector.js';
 import { buildChatMessagesWithLangChain } from './rag/rag_langchain.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -105,30 +106,8 @@ function contentToText(content) {
   return '';
 }
 
-app.get('/', (req, res) => {
-  // index.html 直接用静态文件输出（不需要模板引擎）
-  res.sendFile(path.join(__dirname, '..', 'templates', 'index.html'));
-});
-
-app.use('/static', express.static(path.join(__dirname, '..', 'static')));
-
-app.post('/rag/ingest', (req, res) => {
-  const userId = String(req.body?.user_id || '').trim();
-  const title = req.body?.title ? String(req.body.title).trim() : null;
-  const text = String(req.body?.text || '').trim();
-
-  if (!userId) return res.status(400).json({ ok: false, error: 'user_id 不能为空' });
-  if (!text) return res.status(400).json({ ok: false, error: 'text 不能为空' });
-
-  const result = ragIngest(userId, title, text);
-  ensureEmbeddingsForDocument(userId, result.document_id).catch((e) => {
-    console.error('[RAG] 文档生成向量失败:', e?.message || String(e));
-  });
-  return res.json({ ok: true, ...result, embeddings: { status: 'scheduled' } });
-});
-
 // 文件上传端点
-app.post('/documents/upload', upload.single('file'), (req, res) => {
+app.post('/documents/upload', upload.single('file'), async (req, res) => {
   try {
     const userId = String(req.body?.user_id || '').trim();
     const title = req.body?.title ? String(req.body.title).trim() : null;
@@ -153,6 +132,22 @@ app.post('/documents/upload', upload.single('file'), (req, res) => {
       req.file.path,
       req.file.mimetype
     );
+
+    // 提取文档内容并触发 RAG ingestion
+    try {
+      const content = await loadDocument(req.file.path);
+      if (content && content.trim()) {
+        const ragResult = await ragIngest(userId, result.document_id, docTitle, content);
+        ensureEmbeddingsForDocument(userId, ragResult.document_id).catch((e) => {
+          console.error('[RAG] 文档生成向量失败:', e?.message || String(e));
+        });
+        console.log(`[RAG] 文档 ${docTitle} 已摄入，chunk 数量: ${ragResult.chunks}`);
+      } else {
+        console.warn(`[RAG] 文档 ${docTitle} 内容为空，跳过摄入`);
+      }
+    } catch (e) {
+      console.error('[RAG] 文档内容提取失败:', e?.message || String(e));
+    }
 
     return res.json({
       ok: true,
@@ -333,7 +328,8 @@ app.post('/chat', async (req, res) => {
   let ragHits = [];
   if (rag) {
     try {
-      ragHits = await vectorSearch(userId, message, RAG_TOP_K);
+      ragHits = await vectorSearch(userId, message);
+      console.log('[RAG] 检索到的内容:', ragHits);
     } catch (e) {
       console.error('[RAG] 检索失败:', e?.message || String(e));
     }
