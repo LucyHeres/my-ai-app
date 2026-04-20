@@ -11,8 +11,16 @@
         <div class="message-avatar" :class="msg.role">
           {{ msg.role === 'user' ? '我' : '🤖' }}
         </div>
-        <div class="message-bubble" :class="msg.role">
-          {{ msg.content }}
+        <div class="message-content-wrapper">
+          <div class="message-bubble" :class="msg.role">
+            <div class="message-text">{{ msg.content }}</div>
+            <div v-if="msg.role === 'ai' && msg.sources && msg.sources.length > 0 && msg.streamingComplete" class="sources-footer">
+              <span class="sources-label">参考文档：</span>
+              <span v-for="(doc, docIdx) in msg.sources" :key="docIdx" class="source-doc">
+                {{ doc.title || doc.filename }}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -78,13 +86,8 @@ async function sendMessage() {
   inputMessage.value = ''
   isSending.value = true
 
-  messages.value.push({ role: 'ai', content: '' })
+  messages.value.push({ role: 'ai', content: '', sources: [], streamingComplete: false })
   const aiMsgIndex = messages.value.length - 1
-
-  let aiBubbleEl = null
-  await nextTick()
-  const bubbles = document.querySelectorAll('.message-bubble.ai')
-  aiBubbleEl = bubbles[bubbles.length - 1]
 
   let fullContent = ''
 
@@ -107,7 +110,14 @@ async function sendMessage() {
 
     while (true) {
       const { done, value } = await reader.read()
-      if (done) break
+      if (done) {
+        // 流式传输完成，标记为完成以显示参考文档
+        messages.value[aiMsgIndex] = {
+          ...messages.value[aiMsgIndex],
+          streamingComplete: true
+        }
+        break
+      }
 
       buffer += decoder.decode(value, { stream: true })
       const parts = buffer.split('\n\n')
@@ -121,20 +131,23 @@ async function sendMessage() {
             if (data.text) {
               for (const char of data.text) {
                 fullContent += char
-                if (aiBubbleEl) {
-                  aiBubbleEl.textContent = fullContent
-                }
                 messages.value[aiMsgIndex] = {
                   ...messages.value[aiMsgIndex],
                   content: fullContent
                 }
                 scrollToBottom()
-                await new Promise(resolve => setTimeout(resolve, 20))
+                await new Promise(resolve => setTimeout(resolve, 5))
               }
             }
             if (data.model) {
               globalState.modelName = `模型：${data.model}`
               modelName.value = `模型：${data.model}`
+            }
+            if (data.sources) {
+              messages.value[aiMsgIndex] = {
+                ...messages.value[aiMsgIndex],
+                sources: data.sources
+              }
             }
           } catch (e) {
             console.error('解析SSE数据失败:', e)
@@ -146,9 +159,6 @@ async function sendMessage() {
     console.error('[LLM] 调用失败:', e?.message || String(e))
     const errorMsg = `错误：${e.message}`
     fullContent = errorMsg
-    if (aiBubbleEl) {
-      aiBubbleEl.textContent = errorMsg
-    }
     messages.value[aiMsgIndex] = {
       ...messages.value[aiMsgIndex],
       content: errorMsg
@@ -242,6 +252,9 @@ function handleNewChat() {
   border-radius: 12px;
   white-space: pre-wrap;
   word-break: break-word;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .message-bubble.ai {
@@ -252,6 +265,43 @@ function handleNewChat() {
 .message-bubble.user {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
+}
+
+.message-content-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: 100%;
+}
+
+.sources-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 12px;
+  background: #f8fafc;
+  border-radius: 8px;
+  font-size: 12px;
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.sources-label {
+  font-weight: 500;
+  color: #475569;
+}
+
+.source-doc {
+  padding: 2px 8px;
+  background: #e0e7ff;
+  color: #4f46e5;
+  border-radius: 4px;
+  font-size: 11px;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .input-area {

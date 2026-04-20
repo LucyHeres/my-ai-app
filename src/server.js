@@ -326,10 +326,22 @@ app.post('/chat', async (req, res) => {
 
   // 3) 可选：RAG 检索，把命中的资料片段注入 system prompt
   let ragHits = [];
+  let sourceDocuments = [];
   if (rag) {
     try {
       ragHits = await vectorSearch(userId, message);
-      console.log('[RAG] 检索到的内容:', ragHits);
+
+      // 收集来源文档 - 只保留相似度最高的文档
+      if (ragHits.length > 0 && ragHits[0].document_id) {
+        const bestHit = ragHits[0];
+        sourceDocuments = [{
+          document_id: bestHit.document_id,
+          title: bestHit.title,
+          filename: bestHit.filename
+        }];
+        // 发送来源文档信息给前端
+        sseSend(res, { sources: sourceDocuments });
+      }
     } catch (e) {
       console.error('[RAG] 检索失败:', e?.message || String(e));
     }

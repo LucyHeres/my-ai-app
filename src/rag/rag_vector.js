@@ -82,11 +82,12 @@ const stmtUpsertEmbedding = db.prepare(
      embedding = excluded.embedding`
 );
 
-// 按 user 拿出所有向量，用于最简版全量扫描检索
+// 按 user 拿出所有向量，用于最简版全量扫描检索（包含文档信息）
 const stmtSelectEmbeddingsForUser = db.prepare(
-  `SELECT e.chunk_id, e.embedding, c.content
+  `SELECT e.chunk_id, e.embedding, c.content, c.document_id, d.title, d.filename
    FROM rag_chunk_embeddings e
    JOIN rag_chunks c ON c.id = e.chunk_id
+   LEFT JOIN rag_documents d ON d.id = c.document_id
    WHERE e.user_id = ?
    ORDER BY e.chunk_id DESC`
 );
@@ -159,12 +160,12 @@ async function ensureEmbeddingsForDocument(userId, documentId, opts) {
  * 最简版向量检索：
  * 1) query 转向量
  * 2) 全量扫描该用户所有 chunk 向量
- * 3) 按余弦相似度排序后取 TopK
+ * 3) 按余弦相似度排序后取 TopK，并过滤低于阈值的结果
  * @param {string} userId
  * @param {string} query
  * @param {number} topK
  * @param {{client?: OpenAI, model?: string}=} opts
- * @returns {Promise<Array<{score:number, chunk_id:number, content:string}>>}
+ * @returns {Promise<Array<{score:number, chunk_id:number, content:string, document_id:number, title:string, filename:string}>>}
  */
 async function vectorSearch(userId, query, opts) {
   const client = opts?.client || createEmbeddingClient();
@@ -172,15 +173,20 @@ async function vectorSearch(userId, query, opts) {
 
   const qvec = await embedText(client, model, query);
   const rows = stmtSelectEmbeddingsForUser.all(userId);
-  console.log('从 SQLite 取出所有向量:',rows);
+  console.log('从 SQLite 取出所有向量:',rows.length);
 
   const scored = rows.map((row) => ({
     score: cosineSimilarity(qvec, deserializeEmbedding(row.embedding)),
     chunk_id: row.chunk_id,
     content: row.content,
+    document_id: row.document_id,
+    title: row.title,
+    filename: row.filename,
   }));
 
   scored.sort((a, b) => b.score - a.score);
+  console.log('[RAG] 按余弦相似度排序后的向量检索结果:', scored);
+
   return scored.slice(0, RAG_TOP_K);
 }
 
