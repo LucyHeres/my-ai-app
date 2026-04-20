@@ -2,6 +2,7 @@ import OpenAI from 'openai';
 import { db } from '../db/db.js';
 
 const RAG_TOP_K = 10;
+const RAG_SIMILARITY_THRESHOLD = 0.5;
 
 
 /**
@@ -163,17 +164,17 @@ async function ensureEmbeddingsForDocument(userId, documentId, opts) {
  * 3) 按余弦相似度排序后取 TopK，并过滤低于阈值的结果
  * @param {string} userId
  * @param {string} query
- * @param {number} topK
- * @param {{client?: OpenAI, model?: string}=} opts
+ * @param {{topK?: number, threshold?: number, client?: OpenAI, model?: string}=} opts
  * @returns {Promise<Array<{score:number, chunk_id:number, content:string, document_id:number, title:string, filename:string}>>}
  */
 async function vectorSearch(userId, query, opts) {
   const client = opts?.client || createEmbeddingClient();
   const model = opts?.model || getEmbeddingModel();
+  const topK = opts?.topK || RAG_TOP_K;
+  const threshold = opts?.threshold ?? RAG_SIMILARITY_THRESHOLD;
 
   const qvec = await embedText(client, model, query);
   const rows = stmtSelectEmbeddingsForUser.all(userId);
-  console.log('从 SQLite 取出所有向量:',rows.length);
 
   const scored = rows.map((row) => ({
     score: cosineSimilarity(qvec, deserializeEmbedding(row.embedding)),
@@ -185,9 +186,12 @@ async function vectorSearch(userId, query, opts) {
   }));
 
   scored.sort((a, b) => b.score - a.score);
-  console.log('[RAG] 按余弦相似度排序后的向量检索结果:', scored);
+  console.log('[RAG] 从 SQLite 取出所有向量并按相似度排序:', scored.length);
 
-  return scored.slice(0, RAG_TOP_K);
+  const filtered = scored.filter(item => item.score >= threshold);
+  console.log('[RAG] 过滤后的检索结果 (阈值=' + threshold + '):', filtered);
+
+  return filtered.slice(0, topK);
 }
 
 export {

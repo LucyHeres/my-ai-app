@@ -15,7 +15,7 @@
           <div class="message-bubble" :class="msg.role">
             <div class="message-text">{{ msg.content }}</div>
             <div v-if="msg.role === 'ai' && msg.sources && msg.sources.length > 0 && msg.streamingComplete" class="sources-footer">
-              <span class="sources-label">参考文档：</span>
+              <span class="sources-label">数据来源：</span>
               <span v-for="(doc, docIdx) in msg.sources" :key="docIdx" class="source-doc">
                 {{ doc.title || doc.filename }}
               </span>
