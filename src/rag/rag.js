@@ -23,16 +23,20 @@ const stmtInsertChunk = db.prepare(
 async function genTextChunks(userId, docId, title, text) {
   const chunks = await chunkText(text);
 
+  const chunkIds = [];
   const tx = db.transaction(() => {
     for (let idx = 0; idx < chunks.length; idx += 1) {
-      stmtInsertChunk.run(userId, docId, idx, chunks[idx]);
+      const result = stmtInsertChunk.run(userId, docId, idx, chunks[idx]);
+      chunkIds.push(Number(result.lastInsertRowid));
     }
     return { document_id: Number(docId), chunks: chunks.length };
   });
 
+  const txResult = tx();
+
   // 返回 chunks 数据，方便直接传给向量数据库
   const chunksWithMeta = chunks.map((content, idx) => ({
-    chunk_id: null, // SQLite 刚插入还没 id，传 null 没关系，Chroma 会自己生成
+    chunk_id: chunkIds[idx],
     content,
     document_id: Number(docId),
     chunk_index: idx,
@@ -40,7 +44,7 @@ async function genTextChunks(userId, docId, title, text) {
     filename: title,
   }));
 
-  return { ...tx(), chunkData: chunksWithMeta };
+  return { ...txResult, chunkData: chunksWithMeta };
 }
 
 export {
