@@ -20,7 +20,7 @@ const stmtInsertChunk = db.prepare(
   `INSERT INTO rag_chunks (user_id, document_id, chunk_index, content) VALUES (?, ?, ?, ?)`
 );
 
-async function ragIngest(userId, docId, title, text) {
+async function genTextChunks(userId, docId, title, text) {
   const chunks = await chunkText(text);
 
   const tx = db.transaction(() => {
@@ -30,9 +30,19 @@ async function ragIngest(userId, docId, title, text) {
     return { document_id: Number(docId), chunks: chunks.length };
   });
 
-  return tx();
+  // 返回 chunks 数据，方便直接传给向量数据库
+  const chunksWithMeta = chunks.map((content, idx) => ({
+    chunk_id: null, // SQLite 刚插入还没 id，传 null 没关系，Chroma 会自己生成
+    content,
+    document_id: Number(docId),
+    chunk_index: idx,
+    title,
+    filename: title,
+  }));
+
+  return { ...tx(), chunkData: chunksWithMeta };
 }
 
 export {
-  ragIngest,
+  genTextChunks,
 };

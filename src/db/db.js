@@ -108,6 +108,14 @@ const stmtDeleteEmbeddingsByDoc = db.prepare(
   `DELETE FROM rag_chunk_embeddings WHERE chunk_id IN (SELECT id FROM rag_chunks WHERE document_id = ? AND user_id = ?)`
 );
 
+const stmtLoadChunksByDoc = db.prepare(
+  `SELECT c.id as chunk_id, c.content, c.document_id, c.chunk_index, d.title, d.filename
+   FROM rag_chunks c
+   JOIN rag_documents d ON c.document_id = d.id
+   WHERE c.user_id = ? AND c.document_id = ?
+   ORDER BY c.chunk_index ASC`
+);
+
 function saveMessage(userId, sessionId, role, content) {
   stmtInsertMessage.run(userId, sessionId, role, content);
 }
@@ -148,6 +156,10 @@ function deleteDocument(docId, userId) {
   return tx();
 }
 
+function loadChunksByDoc(userId, docId) {
+  return stmtLoadChunksByDoc.all(userId, docId);
+}
+
 export {
   db,
   initDb,
@@ -157,4 +169,5 @@ export {
   loadDocuments,
   getDocument,
   deleteDocument,
+  loadChunksByDoc,
 };

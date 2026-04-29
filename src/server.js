@@ -5,11 +5,11 @@ import multer from 'multer';
 import 'dotenv/config';
 import { fileURLToPath } from 'url';
 import { ChatOpenAI } from '@langchain/openai';
-import { initDb, saveMessage, loadHistory, saveDocument, loadDocuments, getDocument, deleteDocument } from './db/db.js';
+import { initDb, saveMessage, loadHistory, saveDocument, loadDocuments, getDocument, deleteDocument, loadChunksByDoc } from './db/db.js';
 import { createOutputSanitizer } from './utils/output_sanitize.js';
-import { ragIngest } from './rag/rag.js';
+import { genTextChunks } from './rag/rag.js';
 import { loadDocument } from './rag/rag_document_loader.js';
-import { ensureEmbeddingsForDocument, vectorSearch } from './rag/rag_vector.js';
+import { addToChroma, deleteFromChroma, vectorSearch } from './rag/rag_chroma.js';
 import { buildChatMessagesWithLangChain } from './rag/rag_langchain.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -47,7 +47,7 @@ const storage = multer.diskStorage({
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
     const ext = path.extname(file.originalname);
     cb(null, uniqueSuffix + ext);
-  }
+  },
 });
 
 const upload = multer({
@@ -62,7 +62,7 @@ const DEEPSEEK_BASE_URL = process.env.DEEPSEEK_BASE_URL;
 const DEFAULT_MODEL = 'deepseek-chat';
 const MAX_HISTORY = Number.parseInt(process.env.MAX_HISTORY || '20', 10);
 
-// 产品侧身份（企业常见做法：对外只暴露产品助手身份，而不是“我是某个模型”）
+// 产品侧身份（企业常见做法：对外只暴露产品助手身份，而不是"我是某个模型"）
 const AGENT_NAME = process.env.AGENT_NAME;
 const AGENT_SYSTEM_PROMPT = process.env.AGENT_SYSTEM_PROMPT;
 const sanitizeOutput = createOutputSanitizer({ agentName: AGENT_NAME });
@@ -137,13 +137,12 @@ app.post('/documents/upload', upload.single('file'), async (req, res) => {
     try {
       const content = await loadDocument(req.file.path);
       if (content && content.trim()) {
-        const ragResult = await ragIngest(userId, result.document_id, docTitle, content);
-        ensureEmbeddingsForDocument(userId, ragResult.document_id).catch((e) => {
-          console.error('[RAG] 文档生成向量失败:', e?.message || String(e));
-        });
-        console.log(`[RAG] 文档 ${docTitle} 已摄入，chunk 数量: ${ragResult.chunks}`);
-      } else {
-        console.warn(`[RAG] 文档 ${docTitle} 内容为空，跳过摄入`);
+        const ragResult = await genTextChunks(userId, result.document_id, docTitle, content);
+        const chromaResult = await addToChroma(userId, ragResult.chunkData); // 添加到 Chroma 向量数据库
+        console.log(`[RAG] 文档 ${docTitle} 已导入: ${chromaResult.added}/${chromaResult.total} 个 chunks 成功添加到向量数据库`);
+        if (chromaResult.failed && chromaResult.failed.length > 0) {
+          console.log(`[RAG] 警告: ${chromaResult.failed.length} 个 chunks 添加失败`);
+        }
       }
     } catch (e) {
       console.error('[RAG] 文档内容提取失败:', e?.message || String(e));
@@ -156,6 +155,7 @@ app.post('/documents/upload', upload.single('file'), async (req, res) => {
       size: req.file.size,
       title: docTitle
     });
+    
   } catch (e) {
     console.error('[Upload] 上传失败:', e?.message || String(e));
     // 清理已上传的文件
@@ -197,6 +197,11 @@ app.delete('/documents/:id', (req, res) => {
     if (!result.deleted) {
       return res.status(404).json({ ok: false, error: result.error || '删除失败' });
     }
+
+    // 从 Chroma 向量库删除
+    deleteFromChroma(userId, docId).catch((e) => {
+      console.error('[RAG] 从 Chroma 删除文档失败:', e?.message || String(e));
+    });
 
     // 删除磁盘上的文件
     if (result.filePath && fs.existsSync(result.filePath)) {
@@ -317,7 +322,7 @@ app.post('/chat', async (req, res) => {
     sseSend(res, { error: 'message 不能为空' });
     return res.end();
   }
-  
+
   // 1) 先写入用户消息（持久化记忆）
   saveMessage(userId, sessionId, 'user', message);
 
@@ -330,15 +335,15 @@ app.post('/chat', async (req, res) => {
   if (rag) {
     try {
       ragHits = await vectorSearch(userId, message);
-
-      // 收集来源文档 - 只保留相似度最高的文档
-      if (ragHits.length > 0 && ragHits[0].document_id) {
-        const bestHit = ragHits[0];
-        sourceDocuments = [{
-          document_id: bestHit.document_id,
-          title: bestHit.title,
-          filename: bestHit.filename
-        }];
+      const validHits = ragHits.slice(0, 1); //引用来源先只取第一个
+      if (validHits.length > 0) {
+        sourceDocuments = validHits.map(hit => ({
+          document_id: hit.document_id,
+          title: hit.title,
+          filename: hit.filename,
+          content: hit.content,
+          score: hit.score
+        }));
         // 发送来源文档信息给前端
         sseSend(res, { sources: sourceDocuments });
       }

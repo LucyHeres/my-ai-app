@@ -3,7 +3,9 @@
     "allow": [
       "Bash(lsof -ti:8000)",
       "Bash(xargs kill:*)",
-      "Bash(npm run:*)"
+      "Bash(npm run:*)",
+      "Bash(npm list:*)",
+      "Bash(yarn list:*)"
     ]
   }
 }
