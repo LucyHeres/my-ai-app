@@ -1,100 +1,101 @@
 <template>
   <div class="documents-container">
-    <div class="content-wrapper">
-      <div class="page-header">
-        <h2>知识库</h2>
-        <div class="header-actions">
-          <el-input v-model="searchKeyword" placeholder="搜索文档..." prefix-icon="Search" style="width: 300px;" />
-          <el-button type="primary" @click="fileInput && fileInput.click()">
-            <el-icon><Upload /></el-icon> 上传文档
+    <div class="page-header">
+      <h2>知识库</h2>
+      <div class="header-actions">
+        <el-input v-model="searchKeyword" placeholder="搜索文档..." prefix-icon="Search" style="width: 240px;" />
+        <el-button type="primary" @click="fileInput && fileInput.click()">
+          <el-icon><Upload /></el-icon> 上传文档
+        </el-button>
+        <input ref="fileInput" type="file" multiple style="display: none;" @change="handleFileChange" />
+      </div>
+    </div>
+
+    <div v-if="uploadFiles.length > 0" class="upload-section">
+      <div class="upload-header">
+        <span class="upload-title">待上传文件 ({{ uploadFiles.length }})</span>
+        <div class="upload-actions">
+          <el-button @click="uploadFiles = []" :disabled="isUploading">清空</el-button>
+          <el-button type="primary" @click="startUpload" :loading="isUploading" :disabled="isUploading">
+            {{ isUploading ? '上传中...' : '开始上传' }}
           </el-button>
-          <input ref="fileInput" type="file" multiple style="display: none;" @change="handleFileChange" />
         </div>
       </div>
+      <div class="upload-file-list">
+        <div v-for="(file, idx) in uploadFiles" :key="idx" class="upload-file-item">
+          <span class="file-icon-small">{{ getFileIcon(file.name).icon }}</span>
+          <span class="upload-file-name">{{ file.name }}</span>
+          <span class="upload-file-size">{{ formatFileSize(file.size) }}</span>
+        </div>
+      </div>
+    </div>
 
-      <div v-if="uploadFiles.length > 0" class="upload-section">
-        <div class="upload-header">
-          <span class="upload-title">待上传文件 ({{ uploadFiles.length }})</span>
-          <div class="upload-actions">
-            <el-button @click="uploadFiles = []" :disabled="isUploading">清空</el-button>
-            <el-button type="primary" @click="startUpload" :loading="isUploading" :disabled="isUploading">
-              {{ isUploading ? '上传中...' : '开始上传' }}
+    <div class="main-layout">
+      <div class="sidebar">
+        <div v-if="loadingDocs" class="sidebar-loading">
+          <el-icon class="is-loading"><Loading /></el-icon>
+        </div>
+        <div v-else-if="filteredDocuments.length === 0" class="sidebar-empty">暂无文档</div>
+        <div
+          v-for="doc in filteredDocuments"
+          :key="doc.id"
+          class="doc-item"
+          :class="{ active: previewDoc?.id === doc.id }"
+          @click="previewDocument(doc)"
+        >
+          <div class="doc-item-icon" :class="getFileIcon(doc.filename).class">
+            {{ getFileIcon(doc.filename).icon }}
+          </div>
+          <div class="doc-item-info">
+            <div class="doc-item-title" :title="doc.title || doc.filename">{{ doc.title || doc.filename || '未命名文档' }}</div>
+            <div class="doc-item-meta">{{ formatFileSize(doc.file_size) }}</div>
+          </div>
+          <div class="doc-item-actions">
+            <el-button link type="primary" @click.stop="downloadDocument(doc)" title="下载">
+              <el-icon><Download /></el-icon>
+            </el-button>
+            <el-button link type="danger" @click.stop="deleteDocument(doc)" title="删除">
+              <el-icon><Delete /></el-icon>
             </el-button>
           </div>
         </div>
-        <div class="file-list">
-          <div v-for="(file, idx) in uploadFiles" :key="idx" class="file-item">
-            <span class="file-icon">{{ getFileIcon(file.name).icon }}</span>
-            <span class="file-name">{{ file.name }}</span>
-            <span class="file-size">{{ formatFileSize(file.size) }}</span>
-          </div>
+      </div>
+
+      <div class="preview-area">
+        <div v-if="!previewDoc" class="preview-empty">
+          <div class="preview-empty-icon">📄</div>
+          <div>选择文档以预览</div>
         </div>
-      </div>
-
-      <el-card class="documents-card">
-        <el-table :data="documents" v-loading="loadingDocs" style="width: 100%;">
-          <el-table-column prop="title" label="文档名称" min-width="300">
-            <template #default="{ row }">
-              <div class="document-info">
-                <div class="file-icon" :class="getFileIcon(row.filename).class">
-                  {{ getFileIcon(row.filename).icon }}
-                </div>
-                <span class="doc-title">{{ row.title || row.filename || '未命名文档' }}</span>
-              </div>
-            </template>
-          </el-table-column>
-          <el-table-column prop="file_size" label="大小" width="120">
-            <template #default="{ row }">{{ formatFileSize(row.file_size) }}</template>
-          </el-table-column>
-          <el-table-column prop="created_at" label="上传时间" width="140">
-            <template #default="{ row }">{{ formatDate(row.created_at) }}</template>
-          </el-table-column>
-          <el-table-column label="操作" width="180" fixed="right">
-            <template #default="{ row }">
-              <el-button link type="primary" @click="previewDocument(row)">
-                <el-icon><View /></el-icon>
-              </el-button>
-              <el-button link type="primary" @click="downloadDocument(row)">
-                <el-icon><Download /></el-icon>
-              </el-button>
-              <el-button link type="danger" @click="deleteDocument(row)">
-                <el-icon><Delete /></el-icon>
-              </el-button>
-            </template>
-          </el-table-column>
-        </el-table>
-        <template #empty>
-          <div class="empty-state">暂无文档，请上传</div>
+        <template v-else>
+          <div class="preview-header">
+            <div class="preview-file-info">
+              <span class="preview-filename">{{ previewDoc.filename }}</span>
+              <span class="preview-meta">{{ formatFileSize(previewDoc.file_size) }} &middot; {{ formatDate(previewDoc.created_at) }}</span>
+            </div>
+            <el-button type="primary" size="small" @click="downloadDocument(previewDoc)">
+              <el-icon><Download /></el-icon> 下载
+            </el-button>
+          </div>
+          <div class="preview-body">
+            <div v-if="previewDoc?.can_preview && previewDoc?.preview_url" class="preview-pdf">
+              <iframe :src="previewDoc.preview_url" class="pdf-iframe" />
+            </div>
+            <div v-else-if="previewDoc?.can_preview && previewContent" class="preview-content">{{ previewContent }}</div>
+            <div v-else class="no-preview">
+              <div class="no-preview-icon">📄</div>
+              <div>该文件类型暂不支持在线预览，请下载后查看</div>
+            </div>
+          </div>
         </template>
-      </el-card>
+      </div>
     </div>
-
-    <el-dialog v-model="previewVisible" title="文档预览" width="800px" :close-on-click-modal="false">
-      <div v-if="previewDoc" class="preview-info">
-        <el-descriptions :column="3" border>
-          <el-descriptions-item label="文件名">{{ previewDoc.filename }}</el-descriptions-item>
-          <el-descriptions-item label="大小">{{ formatFileSize(previewDoc.file_size) }}</el-descriptions-item>
-          <el-descriptions-item label="上传时间">{{ formatDate(previewDoc.created_at) }}</el-descriptions-item>
-        </el-descriptions>
-      </div>
-      <div v-if="previewDoc?.can_preview && previewContent" class="preview-content">{{ previewContent }}</div>
-      <div v-else-if="previewDoc" class="no-preview">
-        <div class="no-preview-icon">📄</div>
-        <div>该文件类型暂不支持在线预览，请下载后查看</div>
-      </div>
-      <template #footer>
-        <el-button @click="previewVisible = false">关闭</el-button>
-        <el-button type="primary" @click="downloadDocument(previewDoc)">
-          <el-icon><Download /></el-icon> 下载
-        </el-button>
-      </template>
-    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, inject, onMounted } from 'vue'
+import { ref, inject, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { Loading } from '@element-plus/icons-vue'
 
 const globalState = inject('globalState')
 
@@ -103,17 +104,23 @@ const loadingDocs = ref(false)
 const uploadFiles = ref([])
 const isUploading = ref(false)
 const searchKeyword = ref('')
-const previewVisible = ref(false)
 const previewDoc = ref(null)
 const previewContent = ref('')
 const fileInput = ref(null)
+
+const filteredDocuments = computed(() => {
+  const kw = searchKeyword.value.trim().toLowerCase()
+  if (!kw) return documents.value
+  return documents.value.filter(d =>
+    (d.title || d.filename || '').toLowerCase().includes(kw)
+  )
+})
 
 async function loadDocuments() {
   loadingDocs.value = true
   try {
     const res = await fetch(`/documents?user_id=${encodeURIComponent(globalState.user.id)}`)
     const data = await res.json()
-    console.log('收到的文档列表:', data.documents)
     if (data.ok && data.documents) {
       documents.value = data.documents
     }
@@ -188,7 +195,6 @@ async function previewDocument(doc) {
 
     previewDoc.value = data.document
     previewContent.value = data.document.content || ''
-    previewVisible.value = true
   } catch (e) {
     console.error('预览失败:', e)
     ElMessage.error('预览失败: ' + (e.message || '未知错误'))
@@ -196,6 +202,7 @@ async function previewDocument(doc) {
 }
 
 function downloadDocument(doc) {
+  if (!doc) return
   const url = `/documents/${doc.id}/download?user_id=${encodeURIComponent(globalState.user.id)}`
   window.open(url, '_blank')
 }
@@ -217,6 +224,11 @@ async function deleteDocument(doc) {
     const data = await res.json()
     if (!data.ok) {
       throw new Error(data.error || '删除失败')
+    }
+
+    if (previewDoc.value?.id === doc.id) {
+      previewDoc.value = null
+      previewContent.value = ''
     }
 
     ElMessage.success('删除成功')
@@ -259,22 +271,20 @@ onMounted(() => {
 <style scoped>
 .documents-container {
   flex: 1;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
   padding: 24px;
   background: #f5f7fa;
   height: 100%;
-}
-
-.content-wrapper {
-  max-width: 1200px;
-  margin: 0 auto;
+  overflow: hidden;
 }
 
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 24px;
+  margin-bottom: 16px;
+  flex-shrink: 0;
 }
 
 .page-header h2 {
@@ -294,23 +304,26 @@ onMounted(() => {
   border: none;
 }
 
+/* 上传区域 */
 .upload-section {
   background: white;
-  border-radius: 16px;
-  padding: 20px;
-  margin-bottom: 20px;
+  border-radius: 12px;
+  padding: 16px 20px;
+  margin-bottom: 16px;
   box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  flex-shrink: 0;
 }
 
 .upload-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
+  margin-bottom: 12px;
 }
 
 .upload-title {
   font-weight: 600;
+  font-size: 14px;
 }
 
 .upload-actions {
@@ -323,98 +336,243 @@ onMounted(() => {
   border: none;
 }
 
-.file-list {
+.upload-file-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 12px;
+  gap: 10px;
 }
 
-.file-item {
+.upload-file-item {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
   background: #f9fafb;
-  padding: 10px 14px;
-  border-radius: 10px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
 }
 
-.file-item .file-icon {
-  font-size: 24px;
+.file-icon-small {
+  font-size: 18px;
 }
 
-.file-item .file-name {
-  font-size: 14px;
+.upload-file-name {
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.file-item .file-size {
+.upload-file-size {
   font-size: 12px;
   color: #9ca3af;
 }
 
-.documents-card {
-  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-}
-
-.document-info {
+/* 主布局：左列表 + 右预览 */
+.main-layout {
+  flex: 1;
   display: flex;
-  align-items: center;
-  gap: 12px;
+  gap: 16px;
+  min-height: 0;
 }
 
-.document-info .file-icon {
-  width: 48px;
-  height: 48px;
+/* 左侧文档列表 */
+.sidebar {
+  width: 280px;
+  min-width: 280px;
+  background: white;
   border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+
+.sidebar-loading,
+.sidebar-empty {
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 24px;
-}
-
-.document-info .file-icon.pdf { background: #fee2e2; color: #dc2626; }
-.document-info .file-icon.docx { background: #dbeafe; color: #2563eb; }
-.document-info .file-icon.pptx { background: #fed7aa; color: #ea580c; }
-.document-info .file-icon.txt { background: #e5e7eb; color: #4b5563; }
-
-.doc-title {
-  font-weight: 500;
-}
-
-.empty-state {
-  text-align: center;
-  padding: 40px;
+  height: 120px;
   color: #9ca3af;
+  font-size: 14px;
 }
 
-.preview-info {
-  margin-bottom: 20px;
+.doc-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid #f0f0f0;
+  transition: background 0.15s;
+  position: relative;
+}
+
+.doc-item:last-child {
+  border-bottom: none;
+}
+
+.doc-item:hover {
+  background: #f5f7fa;
+}
+
+.doc-item.active {
+  background: #eef2ff;
+}
+
+.doc-item-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.doc-item-icon.pdf { background: #fee2e2; color: #dc2626; }
+.doc-item-icon.docx { background: #dbeafe; color: #2563eb; }
+.doc-item-icon.pptx { background: #fed7aa; color: #ea580c; }
+.doc-item-icon.txt { background: #e5e7eb; color: #4b5563; }
+
+.doc-item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.doc-item-title {
+  font-size: 13px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.doc-item-meta {
+  font-size: 11px;
+  color: #9ca3af;
+  margin-top: 2px;
+}
+
+.doc-item-actions {
+  display: flex;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 0.15s;
+  flex-shrink: 0;
+}
+
+.doc-item:hover .doc-item-actions {
+  opacity: 1;
+}
+
+.doc-item-actions .el-button {
+  padding: 4px;
+}
+
+/* 右侧预览区域 */
+.preview-area {
+  flex: 1;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.preview-empty {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+.preview-empty-icon {
+  font-size: 48px;
+  margin-bottom: 12px;
+}
+
+.preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 20px;
+  border-bottom: 1px solid #f0f0f0;
+  flex-shrink: 0;
+}
+
+.preview-file-info {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  min-width: 0;
+}
+
+.preview-filename {
+  font-weight: 600;
+  font-size: 14px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.preview-meta {
+  font-size: 12px;
+  color: #9ca3af;
+  white-space: nowrap;
+}
+
+.preview-header .el-button--primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+}
+
+.preview-body {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.preview-pdf {
+  width: 100%;
+  height: 100%;
+}
+
+.pdf-iframe {
+  width: 100%;
+  height: 100%;
+  border: none;
 }
 
 .preview-content {
-  max-height: 60vh;
+  height: 100%;
   overflow-y: auto;
-  background: #f9fafb;
   padding: 20px;
-  border-radius: 8px;
   white-space: pre-wrap;
   word-break: break-word;
   font-family: inherit;
   line-height: 1.7;
+  font-size: 14px;
+  color: #333;
 }
 
 .no-preview {
-  text-align: center;
-  padding: 40px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
   color: #9ca3af;
 }
 
 .no-preview-icon {
   font-size: 48px;
   margin-bottom: 16px;
-}
-
-:deep(.el-dialog__footer .el-button--primary) {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
 }
 </style>

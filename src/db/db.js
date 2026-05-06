@@ -28,6 +28,9 @@ function initDb() {
   if (!cols.includes('user_id')) {
     db.exec(`ALTER TABLE messages ADD COLUMN user_id TEXT;`);
   }
+  if (!cols.includes('sources')) {
+    db.exec(`ALTER TABLE messages ADD COLUMN sources TEXT;`);
+  }
   db.exec(`CREATE INDEX IF NOT EXISTS idx_messages_user_session_id ON messages(user_id, session_id, id);`);
 
   db.exec(`

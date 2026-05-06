@@ -3,7 +3,6 @@ import { ChromaClient } from 'chromadb';
 const CHROMA_URL = process.env.CHROMA_URL || 'http://localhost:8001';
 const RAG_TOP_K = 5;
 const RAG_FETCH_K = 30; // 先多取一些候选给 rerank
-const RAG_SIMILARITY_THRESHOLD = 1.15;//固定阈值：distance < 1.15
 
 let chromaClient = null;
 let collections = {};
@@ -71,7 +70,7 @@ async function rerankChunks(query, chunks, topK) {
   return reranked.slice(0, topK);
 }
 
-// 自定义 EmbeddingFunction，兼容 ModelScope API
+// 自定义 EmbeddingFunction
 function createEmbedder() {
   return {
     generate: async (texts) => {
@@ -190,7 +189,6 @@ async function deleteFromChroma(userId, documentId) {
 
 async function vectorSearch(userId, query, opts = {}) {
   const topK = opts?.topK || RAG_TOP_K;
-  const threshold = opts?.threshold ?? RAG_SIMILARITY_THRESHOLD;
   const fetchK = opts?.fetchK || RAG_FETCH_K;
 
   console.log('[Chroma] 开始检索, userId:', userId, 'query:', query);
@@ -238,7 +236,6 @@ async function vectorSearch(userId, query, opts = {}) {
     const content = results.documents?.[0]?.[i];
 
     if (distance == null || !metadata || !content) continue;
-    if (distance >= threshold) continue; // 先按距离阈值过滤
 
     candidates.push({
       distance,

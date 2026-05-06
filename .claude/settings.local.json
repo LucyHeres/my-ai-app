@@ -5,7 +5,8 @@
       "Bash(xargs kill:*)",
       "Bash(npm run:*)",
       "Bash(npm list:*)",
-      "Bash(yarn list:*)"
+      "Bash(yarn list:*)",
+      "Bash(npm ls:*)"
     ]
   }
 }

@@ -135,17 +135,22 @@ app.post('/documents/upload', upload.single('file'), async (req, res) => {
 
     // 提取文档内容并触发 RAG ingestion
     try {
+      console.log(`[RAG] 开始提取文档内容: ${req.file.path}`);
       const content = await loadDocument(req.file.path);
+      console.log(`[RAG] 文档内容提取完成, 长度: ${content?.length || 0}`);
       if (content && content.trim()) {
         const ragResult = await genTextChunks(userId, result.document_id, docTitle, content);
-        const chromaResult = await addToChroma(userId, ragResult.chunkData); // 添加到 Chroma 向量数据库
+        console.log(`[RAG] 分片完成: ${ragResult.chunks} 个 chunks, chunkData 长度: ${ragResult.chunkData?.length}`);
+        const chromaResult = await addToChroma(userId, ragResult.chunkData);
         console.log(`[RAG] 文档 ${docTitle} 已导入: ${chromaResult.added}/${chromaResult.total} 个 chunks 成功添加到向量数据库`);
         if (chromaResult.failed && chromaResult.failed.length > 0) {
           console.log(`[RAG] 警告: ${chromaResult.failed.length} 个 chunks 添加失败`);
         }
+      } else {
+        console.log(`[RAG] 文档内容为空，跳过向量入库`);
       }
     } catch (e) {
-      console.error('[RAG] 文档内容提取失败:', e?.message || String(e));
+      console.error('[RAG] 文档内容提取失败:', e);
     }
 
     return res.json({
@@ -238,9 +243,10 @@ app.get('/documents/:id', (req, res) => {
       return res.status(404).json({ ok: false, error: '文档不存在' });
     }
 
-    // 尝试读取文件内容（仅支持文本文件预览）
+    // 尝试读取文件内容（支持文本文件和PDF预览）
     let content = null;
     let canPreview = false;
+    let previewUrl = null;
     const ext = path.extname(doc.filename || '').toLowerCase();
     const textExts = ['.txt', '.md', '.json', '.csv', '.html', '.htm', '.xml'];
 
@@ -251,6 +257,9 @@ app.get('/documents/:id', (req, res) => {
       } catch (e) {
         console.error('[Preview] 读取文件失败:', e?.message || String(e));
       }
+    } else if (ext === '.pdf' && doc.file_path && fs.existsSync(doc.file_path)) {
+      canPreview = true;
+      previewUrl = `/documents/${docId}/preview?user_id=${encodeURIComponent(userId)}`;
     }
 
     return res.json({
@@ -263,12 +272,48 @@ app.get('/documents/:id', (req, res) => {
         mime_type: doc.mime_type,
         created_at: doc.created_at,
         can_preview: canPreview,
+        preview_url: previewUrl,
         content: content
       }
     });
   } catch (e) {
     console.error('[Preview] 获取文档失败:', e?.message || String(e));
     return res.status(500).json({ ok: false, error: '获取文档失败' });
+  }
+});
+
+// PDF 内联预览
+app.get('/documents/:id/preview', (req, res) => {
+  try {
+    const docId = Number(req.params.id);
+    const userId = String(req.query?.user_id || '').trim();
+
+    if (!userId) {
+      return res.status(400).json({ ok: false, error: 'user_id 不能为空' });
+    }
+
+    if (!docId || isNaN(docId)) {
+      return res.status(400).json({ ok: false, error: '无效的文档ID' });
+    }
+
+    const doc = getDocument(docId, userId);
+    if (!doc) {
+      return res.status(404).json({ ok: false, error: '文档不存在' });
+    }
+
+    if (!doc.file_path || !fs.existsSync(doc.file_path)) {
+      return res.status(404).json({ ok: false, error: '文件不存在' });
+    }
+
+    if (doc.mime_type) {
+      res.setHeader('Content-Type', doc.mime_type);
+    }
+    res.setHeader('Content-Disposition', 'inline');
+
+    return res.sendFile(path.resolve(doc.file_path));
+  } catch (e) {
+    console.error('[Preview] 预览文档失败:', e?.message || String(e));
+    return res.status(500).json({ ok: false, error: '预览失败' });
   }
 });
 
@@ -343,7 +388,7 @@ app.post('/chat', async (req, res) => {
           filename: hit.filename,
           content: hit.content,
           score: hit.score
-        }));
+        })).filter(i => i.score > 0.5);
         // 发送来源文档信息给前端
         sseSend(res, { sources: sourceDocuments });
       }
@@ -356,6 +401,7 @@ app.post('/chat', async (req, res) => {
     agentSystemPrompt: AGENT_SYSTEM_PROMPT,
     history,
     ragHits,
+    message,
   });
 
   // LangChain 支持多种 message 输入格式，这里用 tuple 简化转换
