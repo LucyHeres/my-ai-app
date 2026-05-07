@@ -11,6 +11,24 @@
         <!-- AI 消息：无气泡，宽度占满 -->
         <template v-if="msg.role === 'ai'">
           <div class="ai-message">
+            <details v-if="msg.toolCalls && msg.toolCalls.length > 0" class="thinking-panel">
+              <summary class="thinking-summary">
+                <span>已完成思考</span>
+                <span class="thinking-chevron">›</span>
+              </summary>
+              <div class="thinking-content">
+                <div v-for="(step, stepIdx) in msg.toolCalls" :key="stepIdx" class="thinking-step">
+                  <div class="thinking-line">
+                    <span class="thinking-label">工具：</span>
+                    <code>{{ step.name }}</code>
+                  </div>
+                  <div class="thinking-line">
+                    <span class="thinking-label">参数：</span>
+                    <code>{{ formatToolArgs(step.args) }}</code>
+                  </div>
+                </div>
+              </div>
+            </details>
             <div class="message-text markdown-body" v-html="renderMarkdown(msg.content)"></div>
             <div v-if="msg.sources && msg.sources.length > 0 && msg.streamingComplete" class="sources-footer">
               <div class="sources-left">
@@ -64,7 +82,8 @@
     <div class="input-area">
       <div class="input-wrapper">
         <div class="input-header">
-          <el-checkbox v-model="ragEnabled" size="large">聊天中启用知识库</el-checkbox>
+          <!-- <el-checkbox v-model="ragEnabled" size="large">聊天中启用知识库</el-checkbox> -->
+          <div class="model-name">{{ modelName }}</div>
           <el-button @click="handleNewChat">+ 新建对话</el-button>
         </div>
         <el-input
@@ -75,12 +94,7 @@
           @keydown="handleKeyDown"
           :disabled="isSending"
         />
-        <div class="input-footer">
-          <div class="model-name">{{ modelName }}</div>
-          <el-button type="primary" @click="sendMessage" :loading="isSending">
-            发送 <el-icon><Right /></el-icon>
-          </el-button>
-        </div>
+       
       </div>
     </div>
   </div>
@@ -136,6 +150,14 @@ function uniqueSources(sources) {
   });
 }
 
+function formatToolArgs(args) {
+  try {
+    return JSON.stringify(args || {})
+  } catch {
+    return '{}'
+  }
+}
+
 watch(ragEnabled, (val) => {
   localStorage.setItem(RAG_ENABLED_KEY, val ? '1' : '0')
 })
@@ -164,7 +186,7 @@ async function sendMessage() {
   inputMessage.value = ''
   isSending.value = true
 
-  messages.value.push({ role: 'ai', content: '', sources: [], streamingComplete: false })
+  messages.value.push({ role: 'ai', content: '', sources: [], toolCalls: [], streamingComplete: false })
   const aiMsgIndex = messages.value.length - 1
 
   let fullContent = ''
@@ -220,6 +242,18 @@ async function sendMessage() {
             if (data.model) {
               globalState.modelName = `模型：${data.model}`
               modelName.value = `模型：${data.model}`
+            }
+            if (data.tool_call) {
+              const toolCalls = [...(messages.value[aiMsgIndex].toolCalls || [])]
+              toolCalls.push({
+                name: data.tool_call.name,
+                args: data.tool_call.args || {}
+              })
+              messages.value[aiMsgIndex] = {
+                ...messages.value[aiMsgIndex],
+                toolCalls
+              }
+              scrollToBottom()
             }
             if (data.sources) {
               messages.value[aiMsgIndex] = {
@@ -307,10 +341,68 @@ function handleNewChat() {
   width: 100%;
 }
 
+.thinking-panel {
+  /* border-left: 3px solid #dbeafe; */
+  background: #f8fafc;
+  border-radius: 8px;
+  padding: 8px 10px 8px 0;
+  margin-bottom: 10px;
+}
+
+.thinking-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  color: #94a3b8;
+  font-size: 13px;
+  font-weight: 500;
+  list-style: none;
+}
+
+.thinking-summary::-webkit-details-marker {
+  display: none;
+}
+
+.thinking-chevron {
+  display: inline-block;
+  font-size: 14px;
+  line-height: 1;
+  transform: rotate(0deg);
+  transition: transform 0.2s ease;
+}
+
+.thinking-panel[open] .thinking-chevron {
+  transform: rotate(90deg);
+}
+
+.thinking-content {
+  margin-top: 8px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.thinking-step {
+  margin-bottom: 8px;
+}
+
+.thinking-step:last-child {
+  margin-bottom: 0;
+}
+
+.thinking-line {
+  line-height: 1.6;
+}
+
+.thinking-label {
+  color: #94a3b8;
+  margin-right: 4px;
+}
+
 /* 用户消息：保留气泡 */
 .message-bubble.user {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: rgba(0,0,0,.04);
+  color: #000;
   padding: 12px 16px;
   border-radius: 12px;
   white-space: pre-wrap;
@@ -394,6 +486,7 @@ function handleNewChat() {
   padding-left: 12px;
   margin: 8px 0;
   color: #64748b;
+  font-size: 14px;
 }
 
 .markdown-body :deep(a) {
@@ -535,8 +628,4 @@ function handleNewChat() {
   font-size: 14px;
 }
 
-.input-footer .el-button--primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-}
 </style>

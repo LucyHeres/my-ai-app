@@ -38,7 +38,7 @@ async function callRerankAPI(query, chunks) {
     }
 
     const data = await response.json();
-    console.log('[Rerank] API 返回:', data);
+    // console.log('[Rerank] API 返回:', data);
 
     return data.results ? data : null;
   } catch (e) {
@@ -200,7 +200,7 @@ async function vectorSearch(userId, query, opts = {}) {
     queryTexts: [query],
     nResults: fetchK, // 先多取一些用于重排序
   });
-  console.log('[Chroma] 原始检索结果:', results);
+  // console.log('[Chroma] 原始检索结果:', results);
 
   // 检查是否返回错误
   if (results && results.error) {
@@ -247,7 +247,7 @@ async function vectorSearch(userId, query, opts = {}) {
     });
   }
 
-  console.log('[Chroma] 初筛候选数:', candidates.length);
+  // console.log('[Chroma] 初筛候选数:', candidates.length);
 
   // 重排序
   const reranked = await rerankChunks(query, candidates, topK);
@@ -262,7 +262,7 @@ async function vectorSearch(userId, query, opts = {}) {
     filename: c.filename,
   }));
 
-  console.log('[Chroma] 重排序后的最终结果:', finalHits);
+  // console.log('[Chroma] 重排序后的最终结果:', finalHits);
   return finalHits;
 }
 

@@ -5,12 +5,12 @@ import multer from 'multer';
 import 'dotenv/config';
 import { fileURLToPath } from 'url';
 import { ChatOpenAI } from '@langchain/openai';
-import { initDb, saveMessage, loadHistory, saveDocument, loadDocuments, getDocument, deleteDocument, loadChunksByDoc } from './db/db.js';
+import { AIMessage, HumanMessage, SystemMessage, ToolMessage } from '@langchain/core/messages';
+import { initDb, saveMessage, loadHistory, saveDocument, loadDocuments, getDocument, deleteDocument } from './db/db.js';
 import { createOutputSanitizer } from './utils/output_sanitize.js';
 import { genTextChunks } from './rag/rag.js';
 import { loadDocument } from './rag/rag_document_loader.js';
 import { addToChroma, deleteFromChroma, vectorSearch } from './rag/rag_chroma.js';
-import { buildChatMessagesWithLangChain } from './rag/rag_langchain.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -76,6 +76,56 @@ const llm = new ChatOpenAI({
   configuration: { baseURL: DEEPSEEK_BASE_URL },
 });
 
+// 1. 定义工具 (Tools Schema) 
+const tools = [
+  {
+    type: "function",
+    function: {
+      name: "get_current_time",
+      description: "当用户询问当前时间或进行计算时调用",
+      parameters: {
+        type: "object",
+        properties: {
+          timezone: {
+            type: "string",
+            description: "可选，时区，例如 'Asia/Shanghai'",
+          },
+        },
+      },
+    },
+  },
+  {
+    type: "function",
+    function: {
+      name: "search_knowledge_base",
+      description: "当用户询问内部文档、项目资料、人员简历或特定领域知识时，调用此工具进行检索",
+      parameters: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description: "用于检索知识库的查询关键词或句子",
+          },
+        },
+        required: ["query"]
+      },
+    },
+  }
+];
+
+const llmWithTools = llm.bindTools(tools);
+
+// 2. 实现本地工具函数
+function getCurrentTime(args) {
+  try {
+    const tz = args.timezone || 'Asia/Shanghai';
+    const time = new Date().toLocaleString('zh-CN', { timeZone: tz });
+    return `当前时间是：${time}`;
+  } catch (e) {
+    return `获取时间失败：${e.message}`;
+  }
+}
+
 function sseInit(res) {
   res.status(200);
   res.setHeader('Content-Type', 'text/event-stream; charset=utf-8');
@@ -90,12 +140,6 @@ function sseSend(res, obj) {
   res.write(`data: ${JSON.stringify(obj)}\n\n`);
 }
 
-function toLcRole(role) {
-  if (role === 'assistant') return 'ai';
-  if (role === 'user') return 'human';
-  return 'system';
-}
-
 function contentToText(content) {
   if (typeof content === 'string') return content;
   if (Array.isArray(content)) {
@@ -104,6 +148,51 @@ function contentToText(content) {
       .join('');
   }
   return '';
+}
+
+async function executeToolCall({ toolCall, userId, fallbackQuery, res }) {
+  if (toolCall.name === 'get_current_time') {
+    const args = toolCall.args || {};
+    console.log(`[Agent] 执行工具: ${toolCall.name}`, args);
+    sseSend(res, { tool_call: { name: toolCall.name, args } });
+
+    const result = getCurrentTime(args);
+    console.log(`[Agent] 工具返回结果: ${result}`);
+    return result;
+  }
+
+  if (toolCall.name === 'search_knowledge_base') {
+    const args = toolCall.args || {};
+    const query = args.query || fallbackQuery;
+    console.log('[Agent] 执行工具: search_knowledge_base', args);
+    sseSend(res, { tool_call: { name: toolCall.name, args } });
+
+    let resultText = '未检索到相关资料。';
+    const ragHits = await vectorSearch(userId, query);
+    const validHits = ragHits.slice(0, 3);
+    // console.log('[RAG] 查询到的向量validHits:', validHits);
+    if (validHits.length > 0) {
+      const sourceDocuments = validHits
+        .map((hit) => ({
+          document_id: hit.document_id,
+          title: hit.title,
+          filename: hit.filename,
+          content: hit.content,
+          score: hit.score,
+        }))
+        .filter((item) => item.score > 0.5).slice(0, 1);
+
+      if (sourceDocuments.length > 0) {
+        sseSend(res, { sources: sourceDocuments });
+        resultText = sourceDocuments
+          .map((doc) => `[来源: ${doc.title || doc.filename}]\n${doc.content}`)
+          .join('\n\n');
+      }
+    }
+    return resultText;
+  }
+
+  throw new Error(`未知工具: ${toolCall.name}`);
 }
 
 // 文件上传端点
@@ -359,7 +448,6 @@ app.post('/chat', async (req, res) => {
   const message = String(req.query?.message || '').trim();
   const userId = String(req.query?.user_id || 'default').trim();
   const sessionId = String(req.query?.session_id || 'default').trim();
-  const rag = String(req.query?.rag || '0') === '1';
 
   sseInit(res);
 
@@ -374,49 +462,70 @@ app.post('/chat', async (req, res) => {
   // 2) 拉取历史作为上下文（从旧到新）
   const history = loadHistory(userId, sessionId, Math.max(0, MAX_HISTORY) * 2);
 
-  // 3) 可选：RAG 检索，把命中的资料片段注入 system prompt
-  let ragHits = [];
-  let sourceDocuments = [];
-  if (rag) {
-    try {
-      ragHits = await vectorSearch(userId, message);
-      const validHits = ragHits.slice(0, 1); //引用来源先只取第一个
-      if (validHits.length > 0) {
-        sourceDocuments = validHits.map(hit => ({
-          document_id: hit.document_id,
-          title: hit.title,
-          filename: hit.filename,
-          content: hit.content,
-          score: hit.score
-        })).filter(i => i.score > 0.5);
-        // 发送来源文档信息给前端
-        sseSend(res, { sources: sourceDocuments });
-      }
-    } catch (e) {
-      console.error('[RAG] 检索失败:', e?.message || String(e));
-    }
+  // 3) 构建 LangChain 消息上下文（当前 user 消息已在 history 中，不重复追加）
+  const lcMessages = [
+    new SystemMessage(AGENT_SYSTEM_PROMPT),
+    new SystemMessage(
+      [
+        '工具调用策略：',
+        '1) 涉及“当前时间/现在几点/日期时间/北京时间”等实时信息时，必须先调用 get_current_time，禁止凭空估计时间。',
+        '2) 涉及内部文档、简历、资料类问题时，优先调用 search_knowledge_base。',
+        '3) 若无需工具即可准确回答，再直接回答。',
+      ].join('\n')
+    ),
+  ];
+  if (Array.isArray(history)) {
+    history.forEach((m) => {
+      if (m.role === 'user') lcMessages.push(new HumanMessage(m.content));
+      if (m.role === 'assistant') lcMessages.push(new AIMessage(m.content));
+    });
   }
-
-  const openaiMessages = await buildChatMessagesWithLangChain({
-    agentSystemPrompt: AGENT_SYSTEM_PROMPT,
-    history,
-    ragHits,
-    message,
-  });
-
-  // LangChain 支持多种 message 输入格式，这里用 tuple 简化转换
-  const lcMessages = openaiMessages.map((m) => [toLcRole(m.role), String(m.content || '')]);
 
   try {
     let assistantText = '';
     sseSend(res, { model: DEFAULT_MODEL });
 
-    const stream = await llm.stream(lcMessages);
-    for await (const chunk of stream) {
-      const piece = contentToText(chunk?.content);
-      if (!piece) continue;
-      const cleaned = sanitizeOutput(piece);
-      assistantText += cleaned;
+    // 4) Planner：先由模型做工具决策（有工具则返回 tool_calls）
+    let plannerResponse = await llmWithTools.invoke(lcMessages);
+    
+    let toolCalls = Array.isArray(plannerResponse.tool_calls) ? plannerResponse.tool_calls : [];
+
+    // 不需要工具时直接返回模型答案
+    if (toolCalls.length === 0) {
+      const candidateAnswer = contentToText(plannerResponse.content);
+      if (candidateAnswer) {
+        const cleaned = sanitizeOutput(candidateAnswer);
+        assistantText = cleaned;
+        sseSend(res, { text: cleaned });
+      }
+      if (assistantText) saveMessage(userId, sessionId, 'assistant', assistantText);
+      return res.end();
+    }
+
+    // 5) Executor：执行工具并把结果写回上下文
+    lcMessages.push(plannerResponse);
+    for (const toolCall of toolCalls) {
+      try {
+        const toolResult = await executeToolCall({
+          toolCall,
+          userId,
+          fallbackQuery: message,
+          res,
+        });
+        lcMessages.push(new ToolMessage({ tool_call_id: toolCall.id, content: toolResult }));
+      } catch (e) {
+        const errText = `工具执行失败: ${e.message}`;
+        console.error('[Agent] 工具执行失败:', e);
+        lcMessages.push(new ToolMessage({ tool_call_id: toolCall.id, content: errText }));
+      }
+    }
+
+    // 6) Responder：基于工具结果生成最终答案（不再继续调用工具）
+    const finalResponse = await llm.invoke(lcMessages);
+    const finalText = contentToText(finalResponse.content);
+    if (finalText) {
+      const cleaned = sanitizeOutput(finalText);
+      assistantText = cleaned;
       sseSend(res, { text: cleaned });
     }
 

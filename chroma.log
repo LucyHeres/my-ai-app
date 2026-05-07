@@ -1,0 +1,401 @@
+[33mWARNING[0m:  [06-05-2026 15:05:19] chroma_server_nofile is set to 65535, but this is less than current soft limit of 1048575. chroma_server_nofile will not be set.
+[32mINFO[0m:     [06-05-2026 15:05:19] Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+[36mDEBUG[0m:    [06-05-2026 15:05:19] Starting component System
+[36mDEBUG[0m:    [06-05-2026 15:05:19] Starting component OpenTelemetryClient
+[36mDEBUG[0m:    [06-05-2026 15:05:19] Starting component SimpleAssignmentPolicy
+[36mDEBUG[0m:    [06-05-2026 15:05:19] Starting component SqliteDB
+[36mDEBUG[0m:    [06-05-2026 15:05:19] Starting component QuotaEnforcer
+[36mDEBUG[0m:    [06-05-2026 15:05:19] Starting component Posthog
+[36mDEBUG[0m:    [06-05-2026 15:05:19] Starting component LocalSegmentManager
+[36mDEBUG[0m:    [06-05-2026 15:05:19] Starting component SegmentAPI
+[32mINFO[0m:     [06-05-2026 15:05:19] Started server process [[36m1019[0m]
+[32mINFO[0m:     [06-05-2026 15:05:19] Waiting for application startup.
+[32mINFO[0m:     [06-05-2026 15:05:19] Application startup complete.
+[32mINFO[0m:     [06-05-2026 15:05:19] Uvicorn running on [1mhttp://localhost:8001[0m (Press CTRL+C to quit)
+[32mINFO[0m:     [06-05-2026 15:22:55] Shutting down
+[32mINFO[0m:     [06-05-2026 15:22:55] Waiting for application shutdown.
+[36mDEBUG[0m:    [06-05-2026 15:22:55] Stopping component System
+[36mDEBUG[0m:    [06-05-2026 15:22:55] Stopping component SegmentAPI
+[36mDEBUG[0m:    [06-05-2026 15:22:55] Stopping component LocalSegmentManager
+[36mDEBUG[0m:    [06-05-2026 15:22:55] Stopping component Posthog
+[36mDEBUG[0m:    [06-05-2026 15:22:55] Stopping component QuotaEnforcer
+[36mDEBUG[0m:    [06-05-2026 15:22:55] Stopping component SqliteDB
+[36mDEBUG[0m:    [06-05-2026 15:22:55] Stopping component SimpleAssignmentPolicy
+[36mDEBUG[0m:    [06-05-2026 15:22:55] Stopping component OpenTelemetryClient
+[32mINFO[0m:     [06-05-2026 15:22:55] Application shutdown complete.
+[32mINFO[0m:     [06-05-2026 15:22:55] Finished server process [[36m1019[0m]
+[33mWARNING[0m:  [06-05-2026 15:22:56] chroma_server_nofile is set to 65535, but this is less than current soft limit of 1048575. chroma_server_nofile will not be set.
+[32mINFO[0m:     [06-05-2026 15:22:56] Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+[36mDEBUG[0m:    [06-05-2026 15:22:56] Starting component System
+[36mDEBUG[0m:    [06-05-2026 15:22:56] Starting component OpenTelemetryClient
+[36mDEBUG[0m:    [06-05-2026 15:22:56] Starting component SimpleAssignmentPolicy
+[36mDEBUG[0m:    [06-05-2026 15:22:56] Starting component SqliteDB
+[36mDEBUG[0m:    [06-05-2026 15:22:56] Starting component QuotaEnforcer
+[36mDEBUG[0m:    [06-05-2026 15:22:56] Starting component Posthog
+[36mDEBUG[0m:    [06-05-2026 15:22:56] Starting component LocalSegmentManager
+[36mDEBUG[0m:    [06-05-2026 15:22:56] Starting component SegmentAPI
+[32mINFO[0m:     [06-05-2026 15:22:56] Started server process [[36m5005[0m]
+[32mINFO[0m:     [06-05-2026 15:22:56] Waiting for application startup.
+[32mINFO[0m:     [06-05-2026 15:22:56] Application startup complete.
+[32mINFO[0m:     [06-05-2026 15:22:56] Uvicorn running on [1mhttp://localhost:8001[0m (Press CTRL+C to quit)
+[32mINFO[0m:     [06-05-2026 15:31:22] Shutting down
+[32mINFO[0m:     [06-05-2026 15:31:22] Waiting for application shutdown.
+[36mDEBUG[0m:    [06-05-2026 15:31:22] Stopping component System
+[36mDEBUG[0m:    [06-05-2026 15:31:22] Stopping component SegmentAPI
+[36mDEBUG[0m:    [06-05-2026 15:31:22] Stopping component LocalSegmentManager
+[36mDEBUG[0m:    [06-05-2026 15:31:22] Stopping component Posthog
+[36mDEBUG[0m:    [06-05-2026 15:31:22] Stopping component QuotaEnforcer
+[36mDEBUG[0m:    [06-05-2026 15:31:22] Stopping component SqliteDB
+[36mDEBUG[0m:    [06-05-2026 15:31:22] Stopping component SimpleAssignmentPolicy
+[36mDEBUG[0m:    [06-05-2026 15:31:22] Stopping component OpenTelemetryClient
+[32mINFO[0m:     [06-05-2026 15:31:22] Application shutdown complete.
+[32mINFO[0m:     [06-05-2026 15:31:22] Finished server process [[36m5005[0m]
+[33mWARNING[0m:  [06-05-2026 15:31:25] chroma_server_nofile is set to 65535, but this is less than current soft limit of 1048575. chroma_server_nofile will not be set.
+[32mINFO[0m:     [06-05-2026 15:31:25] Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+[36mDEBUG[0m:    [06-05-2026 15:31:25] Starting component System
+[36mDEBUG[0m:    [06-05-2026 15:31:25] Starting component OpenTelemetryClient
+[36mDEBUG[0m:    [06-05-2026 15:31:25] Starting component SimpleAssignmentPolicy
+[36mDEBUG[0m:    [06-05-2026 15:31:25] Starting component SqliteDB
+[36mDEBUG[0m:    [06-05-2026 15:31:25] Starting component QuotaEnforcer
+[36mDEBUG[0m:    [06-05-2026 15:31:25] Starting component Posthog
+[36mDEBUG[0m:    [06-05-2026 15:31:25] Starting component LocalSegmentManager
+[36mDEBUG[0m:    [06-05-2026 15:31:25] Starting component SegmentAPI
+[32mINFO[0m:     [06-05-2026 15:31:25] Started server process [[36m7593[0m]
+[32mINFO[0m:     [06-05-2026 15:31:25] Waiting for application startup.
+[32mINFO[0m:     [06-05-2026 15:31:25] Application startup complete.
+[32mINFO[0m:     [06-05-2026 15:31:25] Uvicorn running on [1mhttp://localhost:8001[0m (Press CTRL+C to quit)
+[33mWARNING[0m:  [06-05-2026 15:32:15] chroma_server_nofile is set to 65535, but this is less than current soft limit of 1048575. chroma_server_nofile will not be set.
+[32mINFO[0m:     [06-05-2026 15:32:15] Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+[36mDEBUG[0m:    [06-05-2026 15:32:15] Starting component System
+[36mDEBUG[0m:    [06-05-2026 15:32:15] Starting component OpenTelemetryClient
+[36mDEBUG[0m:    [06-05-2026 15:32:15] Starting component SimpleAssignmentPolicy
+[36mDEBUG[0m:    [06-05-2026 15:32:15] Starting component SqliteDB
+[36mDEBUG[0m:    [06-05-2026 15:32:15] Starting component QuotaEnforcer
+[36mDEBUG[0m:    [06-05-2026 15:32:15] Starting component Posthog
+[36mDEBUG[0m:    [06-05-2026 15:32:15] Starting component LocalSegmentManager
+[36mDEBUG[0m:    [06-05-2026 15:32:15] Starting component SegmentAPI
+[32mINFO[0m:     [06-05-2026 15:32:15] Started server process [[36m7984[0m]
+[32mINFO[0m:     [06-05-2026 15:32:15] Waiting for application startup.
+[32mINFO[0m:     [06-05-2026 15:32:15] Application startup complete.
+[31mERROR[0m:    [06-05-2026 15:32:15] [Errno 48] error while attempting to bind on address ('::1', 8001, 0, 0): address already in use
+[32mINFO[0m:     [06-05-2026 15:32:15] Waiting for application shutdown.
+[36mDEBUG[0m:    [06-05-2026 15:32:15] Stopping component System
+[36mDEBUG[0m:    [06-05-2026 15:32:15] Stopping component SegmentAPI
+[36mDEBUG[0m:    [06-05-2026 15:32:15] Stopping component LocalSegmentManager
+[36mDEBUG[0m:    [06-05-2026 15:32:15] Stopping component Posthog
+[36mDEBUG[0m:    [06-05-2026 15:32:15] Stopping component QuotaEnforcer
+[36mDEBUG[0m:    [06-05-2026 15:32:15] Stopping component SqliteDB
+[36mDEBUG[0m:    [06-05-2026 15:32:15] Stopping component SimpleAssignmentPolicy
+[36mDEBUG[0m:    [06-05-2026 15:32:15] Stopping component OpenTelemetryClient
+[32mINFO[0m:     [06-05-2026 15:32:15] Application shutdown complete.
+[33mWARNING[0m:  [06-05-2026 15:34:23] chroma_server_nofile is set to 65535, but this is less than current soft limit of 1048575. chroma_server_nofile will not be set.
+[32mINFO[0m:     [06-05-2026 15:34:23] Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+[36mDEBUG[0m:    [06-05-2026 15:34:23] Starting component System
+[36mDEBUG[0m:    [06-05-2026 15:34:23] Starting component OpenTelemetryClient
+[36mDEBUG[0m:    [06-05-2026 15:34:23] Starting component SimpleAssignmentPolicy
+[36mDEBUG[0m:    [06-05-2026 15:34:23] Starting component SqliteDB
+[36mDEBUG[0m:    [06-05-2026 15:34:23] Starting component QuotaEnforcer
+[36mDEBUG[0m:    [06-05-2026 15:34:23] Starting component Posthog
+[36mDEBUG[0m:    [06-05-2026 15:34:23] Starting component LocalSegmentManager
+[36mDEBUG[0m:    [06-05-2026 15:34:23] Starting component SegmentAPI
+[32mINFO[0m:     [06-05-2026 15:34:23] Started server process [[36m8701[0m]
+[32mINFO[0m:     [06-05-2026 15:34:23] Waiting for application startup.
+[32mINFO[0m:     [06-05-2026 15:34:23] Application startup complete.
+[31mERROR[0m:    [06-05-2026 15:34:23] [Errno 48] error while attempting to bind on address ('::1', 8001, 0, 0): address already in use
+[32mINFO[0m:     [06-05-2026 15:34:23] Waiting for application shutdown.
+[36mDEBUG[0m:    [06-05-2026 15:34:23] Stopping component System
+[36mDEBUG[0m:    [06-05-2026 15:34:23] Stopping component SegmentAPI
+[36mDEBUG[0m:    [06-05-2026 15:34:23] Stopping component LocalSegmentManager
+[36mDEBUG[0m:    [06-05-2026 15:34:23] Stopping component Posthog
+[36mDEBUG[0m:    [06-05-2026 15:34:23] Stopping component QuotaEnforcer
+[36mDEBUG[0m:    [06-05-2026 15:34:23] Stopping component SqliteDB
+[36mDEBUG[0m:    [06-05-2026 15:34:23] Stopping component SimpleAssignmentPolicy
+[36mDEBUG[0m:    [06-05-2026 15:34:23] Stopping component OpenTelemetryClient
+[32mINFO[0m:     [06-05-2026 15:34:23] Application shutdown complete.
+[33mWARNING[0m:  [06-05-2026 15:37:39] chroma_server_nofile is set to 65535, but this is less than current soft limit of 1048575. chroma_server_nofile will not be set.
+[32mINFO[0m:     [06-05-2026 15:37:39] Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+[36mDEBUG[0m:    [06-05-2026 15:37:39] Starting component System
+[36mDEBUG[0m:    [06-05-2026 15:37:39] Starting component OpenTelemetryClient
+[36mDEBUG[0m:    [06-05-2026 15:37:39] Starting component SimpleAssignmentPolicy
+[36mDEBUG[0m:    [06-05-2026 15:37:39] Starting component SqliteDB
+[36mDEBUG[0m:    [06-05-2026 15:37:39] Starting component QuotaEnforcer
+[36mDEBUG[0m:    [06-05-2026 15:37:39] Starting component Posthog
+[36mDEBUG[0m:    [06-05-2026 15:37:39] Starting component LocalSegmentManager
+[36mDEBUG[0m:    [06-05-2026 15:37:39] Starting component SegmentAPI
+[32mINFO[0m:     [06-05-2026 15:37:39] Started server process [[36m9754[0m]
+[32mINFO[0m:     [06-05-2026 15:37:39] Waiting for application startup.
+[32mINFO[0m:     [06-05-2026 15:37:39] Application startup complete.
+[31mERROR[0m:    [06-05-2026 15:37:39] [Errno 48] error while attempting to bind on address ('::1', 8001, 0, 0): address already in use
+[32mINFO[0m:     [06-05-2026 15:37:39] Waiting for application shutdown.
+[36mDEBUG[0m:    [06-05-2026 15:37:39] Stopping component System
+[36mDEBUG[0m:    [06-05-2026 15:37:39] Stopping component SegmentAPI
+[36mDEBUG[0m:    [06-05-2026 15:37:39] Stopping component LocalSegmentManager
+[36mDEBUG[0m:    [06-05-2026 15:37:39] Stopping component Posthog
+[36mDEBUG[0m:    [06-05-2026 15:37:39] Stopping component QuotaEnforcer
+[36mDEBUG[0m:    [06-05-2026 15:37:39] Stopping component SqliteDB
+[36mDEBUG[0m:    [06-05-2026 15:37:39] Stopping component SimpleAssignmentPolicy
+[36mDEBUG[0m:    [06-05-2026 15:37:39] Stopping component OpenTelemetryClient
+[32mINFO[0m:     [06-05-2026 15:37:39] Application shutdown complete.
+[31mERROR[0m:    [06-05-2026 15:38:03] Failed to send telemetry event ClientCreateCollectionEvent: capture() takes 1 positional argument but 3 were given
+[32mINFO[0m:     [06-05-2026 15:38:03] ::1:58376 - "POST /api/v1/collections?tenant=default_tenant&database=default_database HTTP/1.1" 200
+[36mDEBUG[0m:    [06-05-2026 15:38:03] Starting component PersistentLocalHnswSegment
+[31mERROR[0m:    [06-05-2026 15:38:03] Failed to send telemetry event CollectionQueryEvent: capture() takes 1 positional argument but 3 were given
+[32mINFO[0m:     [06-05-2026 15:38:03] ::1:58376 - "POST /api/v1/collections/7ce032fd-332d-40fe-866a-4e671e9079d2/query HTTP/1.1" 200
+[33mWARNING[0m:  [06-05-2026 15:56:10] chroma_server_nofile is set to 65535, but this is less than current soft limit of 1048575. chroma_server_nofile will not be set.
+[32mINFO[0m:     [06-05-2026 15:56:10] Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+[36mDEBUG[0m:    [06-05-2026 15:56:10] Starting component System
+[36mDEBUG[0m:    [06-05-2026 15:56:10] Starting component OpenTelemetryClient
+[36mDEBUG[0m:    [06-05-2026 15:56:10] Starting component SimpleAssignmentPolicy
+[36mDEBUG[0m:    [06-05-2026 15:56:10] Starting component SqliteDB
+[36mDEBUG[0m:    [06-05-2026 15:56:10] Starting component QuotaEnforcer
+[36mDEBUG[0m:    [06-05-2026 15:56:10] Starting component Posthog
+[36mDEBUG[0m:    [06-05-2026 15:56:10] Starting component LocalSegmentManager
+[36mDEBUG[0m:    [06-05-2026 15:56:10] Starting component SegmentAPI
+[32mINFO[0m:     [06-05-2026 15:56:10] Started server process [[36m13789[0m]
+[32mINFO[0m:     [06-05-2026 15:56:10] Waiting for application startup.
+[32mINFO[0m:     [06-05-2026 15:56:10] Application startup complete.
+[31mERROR[0m:    [06-05-2026 15:56:10] [Errno 48] error while attempting to bind on address ('::1', 8001, 0, 0): address already in use
+[32mINFO[0m:     [06-05-2026 15:56:10] Waiting for application shutdown.
+[36mDEBUG[0m:    [06-05-2026 15:56:10] Stopping component System
+[36mDEBUG[0m:    [06-05-2026 15:56:10] Stopping component SegmentAPI
+[36mDEBUG[0m:    [06-05-2026 15:56:10] Stopping component LocalSegmentManager
+[36mDEBUG[0m:    [06-05-2026 15:56:10] Stopping component Posthog
+[36mDEBUG[0m:    [06-05-2026 15:56:10] Stopping component QuotaEnforcer
+[36mDEBUG[0m:    [06-05-2026 15:56:10] Stopping component SqliteDB
+[36mDEBUG[0m:    [06-05-2026 15:56:10] Stopping component SimpleAssignmentPolicy
+[36mDEBUG[0m:    [06-05-2026 15:56:10] Stopping component OpenTelemetryClient
+[32mINFO[0m:     [06-05-2026 15:56:10] Application shutdown complete.
+[31mERROR[0m:    [06-05-2026 15:56:59] Failed to send telemetry event ClientCreateCollectionEvent: capture() takes 1 positional argument but 3 were given
+[32mINFO[0m:     [06-05-2026 15:56:59] ::1:64202 - "POST /api/v1/collections?tenant=default_tenant&database=default_database HTTP/1.1" 200
+[32mINFO[0m:     [06-05-2026 15:57:00] ::1:64202 - "POST /api/v1/collections/7ce032fd-332d-40fe-866a-4e671e9079d2/query HTTP/1.1" 200
+[33mWARNING[0m:  [07-05-2026 10:18:39] chroma_server_nofile is set to 65535, but this is less than current soft limit of 1048575. chroma_server_nofile will not be set.
+[32mINFO[0m:     [07-05-2026 10:18:39] Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+[36mDEBUG[0m:    [07-05-2026 10:18:39] Starting component System
+[36mDEBUG[0m:    [07-05-2026 10:18:39] Starting component OpenTelemetryClient
+[36mDEBUG[0m:    [07-05-2026 10:18:39] Starting component SimpleAssignmentPolicy
+[36mDEBUG[0m:    [07-05-2026 10:18:39] Starting component SqliteDB
+[36mDEBUG[0m:    [07-05-2026 10:18:39] Starting component QuotaEnforcer
+[36mDEBUG[0m:    [07-05-2026 10:18:39] Starting component Posthog
+[36mDEBUG[0m:    [07-05-2026 10:18:39] Starting component LocalSegmentManager
+[36mDEBUG[0m:    [07-05-2026 10:18:39] Starting component SegmentAPI
+[32mINFO[0m:     [07-05-2026 10:18:39] Started server process [[36m74289[0m]
+[32mINFO[0m:     [07-05-2026 10:18:39] Waiting for application startup.
+[32mINFO[0m:     [07-05-2026 10:18:39] Application startup complete.
+[31mERROR[0m:    [07-05-2026 10:18:39] [Errno 48] error while attempting to bind on address ('::1', 8001, 0, 0): address already in use
+[32mINFO[0m:     [07-05-2026 10:18:39] Waiting for application shutdown.
+[36mDEBUG[0m:    [07-05-2026 10:18:39] Stopping component System
+[36mDEBUG[0m:    [07-05-2026 10:18:39] Stopping component SegmentAPI
+[36mDEBUG[0m:    [07-05-2026 10:18:39] Stopping component LocalSegmentManager
+[36mDEBUG[0m:    [07-05-2026 10:18:39] Stopping component Posthog
+[36mDEBUG[0m:    [07-05-2026 10:18:39] Stopping component QuotaEnforcer
+[36mDEBUG[0m:    [07-05-2026 10:18:39] Stopping component SqliteDB
+[36mDEBUG[0m:    [07-05-2026 10:18:39] Stopping component SimpleAssignmentPolicy
+[36mDEBUG[0m:    [07-05-2026 10:18:39] Stopping component OpenTelemetryClient
+[32mINFO[0m:     [07-05-2026 10:18:39] Application shutdown complete.
+[33mWARNING[0m:  [07-05-2026 10:21:29] chroma_server_nofile is set to 65535, but this is less than current soft limit of 1048575. chroma_server_nofile will not be set.
+[32mINFO[0m:     [07-05-2026 10:21:29] Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+[36mDEBUG[0m:    [07-05-2026 10:21:29] Starting component System
+[36mDEBUG[0m:    [07-05-2026 10:21:29] Starting component OpenTelemetryClient
+[36mDEBUG[0m:    [07-05-2026 10:21:29] Starting component SimpleAssignmentPolicy
+[36mDEBUG[0m:    [07-05-2026 10:21:29] Starting component SqliteDB
+[36mDEBUG[0m:    [07-05-2026 10:21:29] Starting component QuotaEnforcer
+[36mDEBUG[0m:    [07-05-2026 10:21:29] Starting component Posthog
+[36mDEBUG[0m:    [07-05-2026 10:21:29] Starting component LocalSegmentManager
+[36mDEBUG[0m:    [07-05-2026 10:21:29] Starting component SegmentAPI
+[32mINFO[0m:     [07-05-2026 10:21:29] Started server process [[36m75329[0m]
+[32mINFO[0m:     [07-05-2026 10:21:29] Waiting for application startup.
+[32mINFO[0m:     [07-05-2026 10:21:29] Application startup complete.
+[31mERROR[0m:    [07-05-2026 10:21:29] [Errno 48] error while attempting to bind on address ('::1', 8001, 0, 0): address already in use
+[32mINFO[0m:     [07-05-2026 10:21:29] Waiting for application shutdown.
+[36mDEBUG[0m:    [07-05-2026 10:21:29] Stopping component System
+[36mDEBUG[0m:    [07-05-2026 10:21:29] Stopping component SegmentAPI
+[36mDEBUG[0m:    [07-05-2026 10:21:29] Stopping component LocalSegmentManager
+[36mDEBUG[0m:    [07-05-2026 10:21:29] Stopping component Posthog
+[36mDEBUG[0m:    [07-05-2026 10:21:29] Stopping component QuotaEnforcer
+[36mDEBUG[0m:    [07-05-2026 10:21:29] Stopping component SqliteDB
+[36mDEBUG[0m:    [07-05-2026 10:21:29] Stopping component SimpleAssignmentPolicy
+[36mDEBUG[0m:    [07-05-2026 10:21:29] Stopping component OpenTelemetryClient
+[32mINFO[0m:     [07-05-2026 10:21:29] Application shutdown complete.
+[33mWARNING[0m:  [07-05-2026 10:31:57] chroma_server_nofile is set to 65535, but this is less than current soft limit of 1048575. chroma_server_nofile will not be set.
+[32mINFO[0m:     [07-05-2026 10:31:57] Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+[36mDEBUG[0m:    [07-05-2026 10:31:57] Starting component System
+[36mDEBUG[0m:    [07-05-2026 10:31:57] Starting component OpenTelemetryClient
+[36mDEBUG[0m:    [07-05-2026 10:31:57] Starting component SimpleAssignmentPolicy
+[36mDEBUG[0m:    [07-05-2026 10:31:57] Starting component SqliteDB
+[36mDEBUG[0m:    [07-05-2026 10:31:57] Starting component QuotaEnforcer
+[36mDEBUG[0m:    [07-05-2026 10:31:57] Starting component Posthog
+[36mDEBUG[0m:    [07-05-2026 10:31:57] Starting component LocalSegmentManager
+[36mDEBUG[0m:    [07-05-2026 10:31:57] Starting component SegmentAPI
+[32mINFO[0m:     [07-05-2026 10:31:57] Started server process [[36m78733[0m]
+[32mINFO[0m:     [07-05-2026 10:31:57] Waiting for application startup.
+[32mINFO[0m:     [07-05-2026 10:31:57] Application startup complete.
+[31mERROR[0m:    [07-05-2026 10:31:57] [Errno 48] error while attempting to bind on address ('::1', 8001, 0, 0): address already in use
+[32mINFO[0m:     [07-05-2026 10:31:57] Waiting for application shutdown.
+[36mDEBUG[0m:    [07-05-2026 10:31:57] Stopping component System
+[36mDEBUG[0m:    [07-05-2026 10:31:57] Stopping component SegmentAPI
+[36mDEBUG[0m:    [07-05-2026 10:31:57] Stopping component LocalSegmentManager
+[36mDEBUG[0m:    [07-05-2026 10:31:57] Stopping component Posthog
+[36mDEBUG[0m:    [07-05-2026 10:31:57] Stopping component QuotaEnforcer
+[36mDEBUG[0m:    [07-05-2026 10:31:57] Stopping component SqliteDB
+[36mDEBUG[0m:    [07-05-2026 10:31:57] Stopping component SimpleAssignmentPolicy
+[36mDEBUG[0m:    [07-05-2026 10:31:57] Stopping component OpenTelemetryClient
+[32mINFO[0m:     [07-05-2026 10:31:57] Application shutdown complete.
+[31mERROR[0m:    [07-05-2026 10:34:48] Failed to send telemetry event ClientCreateCollectionEvent: capture() takes 1 positional argument but 3 were given
+[32mINFO[0m:     [07-05-2026 10:34:48] ::1:50826 - "POST /api/v1/collections?tenant=default_tenant&database=default_database HTTP/1.1" 200
+[32mINFO[0m:     [07-05-2026 10:34:49] ::1:50826 - "POST /api/v1/collections/7ce032fd-332d-40fe-866a-4e671e9079d2/query HTTP/1.1" 200
+[33mWARNING[0m:  [07-05-2026 11:18:19] chroma_server_nofile is set to 65535, but this is less than current soft limit of 1048575. chroma_server_nofile will not be set.
+[32mINFO[0m:     [07-05-2026 11:18:19] Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+[36mDEBUG[0m:    [07-05-2026 11:18:19] Starting component System
+[36mDEBUG[0m:    [07-05-2026 11:18:19] Starting component OpenTelemetryClient
+[36mDEBUG[0m:    [07-05-2026 11:18:19] Starting component SimpleAssignmentPolicy
+[36mDEBUG[0m:    [07-05-2026 11:18:19] Starting component SqliteDB
+[36mDEBUG[0m:    [07-05-2026 11:18:19] Starting component QuotaEnforcer
+[36mDEBUG[0m:    [07-05-2026 11:18:19] Starting component Posthog
+[36mDEBUG[0m:    [07-05-2026 11:18:19] Starting component LocalSegmentManager
+[36mDEBUG[0m:    [07-05-2026 11:18:19] Starting component SegmentAPI
+[32mINFO[0m:     [07-05-2026 11:18:19] Started server process [[36m87684[0m]
+[32mINFO[0m:     [07-05-2026 11:18:19] Waiting for application startup.
+[32mINFO[0m:     [07-05-2026 11:18:19] Application startup complete.
+[31mERROR[0m:    [07-05-2026 11:18:19] [Errno 48] error while attempting to bind on address ('::1', 8001, 0, 0): address already in use
+[32mINFO[0m:     [07-05-2026 11:18:19] Waiting for application shutdown.
+[36mDEBUG[0m:    [07-05-2026 11:18:19] Stopping component System
+[36mDEBUG[0m:    [07-05-2026 11:18:19] Stopping component SegmentAPI
+[36mDEBUG[0m:    [07-05-2026 11:18:19] Stopping component LocalSegmentManager
+[36mDEBUG[0m:    [07-05-2026 11:18:19] Stopping component Posthog
+[36mDEBUG[0m:    [07-05-2026 11:18:19] Stopping component QuotaEnforcer
+[36mDEBUG[0m:    [07-05-2026 11:18:19] Stopping component SqliteDB
+[36mDEBUG[0m:    [07-05-2026 11:18:19] Stopping component SimpleAssignmentPolicy
+[36mDEBUG[0m:    [07-05-2026 11:18:19] Stopping component OpenTelemetryClient
+[32mINFO[0m:     [07-05-2026 11:18:19] Application shutdown complete.
+[33mWARNING[0m:  [07-05-2026 11:37:24] chroma_server_nofile is set to 65535, but this is less than current soft limit of 1048575. chroma_server_nofile will not be set.
+[32mINFO[0m:     [07-05-2026 11:37:24] Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+[36mDEBUG[0m:    [07-05-2026 11:37:24] Starting component System
+[36mDEBUG[0m:    [07-05-2026 11:37:24] Starting component OpenTelemetryClient
+[36mDEBUG[0m:    [07-05-2026 11:37:24] Starting component SimpleAssignmentPolicy
+[36mDEBUG[0m:    [07-05-2026 11:37:24] Starting component SqliteDB
+[36mDEBUG[0m:    [07-05-2026 11:37:24] Starting component QuotaEnforcer
+[36mDEBUG[0m:    [07-05-2026 11:37:24] Starting component Posthog
+[36mDEBUG[0m:    [07-05-2026 11:37:24] Starting component LocalSegmentManager
+[36mDEBUG[0m:    [07-05-2026 11:37:24] Starting component SegmentAPI
+[32mINFO[0m:     [07-05-2026 11:37:24] Started server process [[36m93892[0m]
+[32mINFO[0m:     [07-05-2026 11:37:24] Waiting for application startup.
+[32mINFO[0m:     [07-05-2026 11:37:24] Application startup complete.
+[31mERROR[0m:    [07-05-2026 11:37:24] [Errno 48] error while attempting to bind on address ('::1', 8001, 0, 0): address already in use
+[32mINFO[0m:     [07-05-2026 11:37:24] Waiting for application shutdown.
+[36mDEBUG[0m:    [07-05-2026 11:37:24] Stopping component System
+[36mDEBUG[0m:    [07-05-2026 11:37:24] Stopping component SegmentAPI
+[36mDEBUG[0m:    [07-05-2026 11:37:24] Stopping component LocalSegmentManager
+[36mDEBUG[0m:    [07-05-2026 11:37:24] Stopping component Posthog
+[36mDEBUG[0m:    [07-05-2026 11:37:24] Stopping component QuotaEnforcer
+[36mDEBUG[0m:    [07-05-2026 11:37:24] Stopping component SqliteDB
+[36mDEBUG[0m:    [07-05-2026 11:37:24] Stopping component SimpleAssignmentPolicy
+[36mDEBUG[0m:    [07-05-2026 11:37:24] Stopping component OpenTelemetryClient
+[32mINFO[0m:     [07-05-2026 11:37:24] Application shutdown complete.
+[31mERROR[0m:    [07-05-2026 11:37:34] Failed to send telemetry event ClientCreateCollectionEvent: capture() takes 1 positional argument but 3 were given
+[32mINFO[0m:     [07-05-2026 11:37:34] ::1:52577 - "POST /api/v1/collections?tenant=default_tenant&database=default_database HTTP/1.1" 200
+[32mINFO[0m:     [07-05-2026 11:37:35] ::1:52577 - "POST /api/v1/collections/7ce032fd-332d-40fe-866a-4e671e9079d2/query HTTP/1.1" 200
+[33mWARNING[0m:  [07-05-2026 13:44:38] chroma_server_nofile is set to 65535, but this is less than current soft limit of 1048575. chroma_server_nofile will not be set.
+[32mINFO[0m:     [07-05-2026 13:44:38] Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+[36mDEBUG[0m:    [07-05-2026 13:44:38] Starting component System
+[36mDEBUG[0m:    [07-05-2026 13:44:38] Starting component OpenTelemetryClient
+[36mDEBUG[0m:    [07-05-2026 13:44:38] Starting component SimpleAssignmentPolicy
+[36mDEBUG[0m:    [07-05-2026 13:44:38] Starting component SqliteDB
+[36mDEBUG[0m:    [07-05-2026 13:44:38] Starting component QuotaEnforcer
+[36mDEBUG[0m:    [07-05-2026 13:44:38] Starting component Posthog
+[36mDEBUG[0m:    [07-05-2026 13:44:38] Starting component LocalSegmentManager
+[36mDEBUG[0m:    [07-05-2026 13:44:38] Starting component SegmentAPI
+[32mINFO[0m:     [07-05-2026 13:44:38] Started server process [[36m2866[0m]
+[32mINFO[0m:     [07-05-2026 13:44:38] Waiting for application startup.
+[32mINFO[0m:     [07-05-2026 13:44:38] Application startup complete.
+[31mERROR[0m:    [07-05-2026 13:44:38] [Errno 48] error while attempting to bind on address ('::1', 8001, 0, 0): address already in use
+[32mINFO[0m:     [07-05-2026 13:44:38] Waiting for application shutdown.
+[36mDEBUG[0m:    [07-05-2026 13:44:38] Stopping component System
+[36mDEBUG[0m:    [07-05-2026 13:44:38] Stopping component SegmentAPI
+[36mDEBUG[0m:    [07-05-2026 13:44:38] Stopping component LocalSegmentManager
+[36mDEBUG[0m:    [07-05-2026 13:44:38] Stopping component Posthog
+[36mDEBUG[0m:    [07-05-2026 13:44:38] Stopping component QuotaEnforcer
+[36mDEBUG[0m:    [07-05-2026 13:44:38] Stopping component SqliteDB
+[36mDEBUG[0m:    [07-05-2026 13:44:38] Stopping component SimpleAssignmentPolicy
+[36mDEBUG[0m:    [07-05-2026 13:44:38] Stopping component OpenTelemetryClient
+[32mINFO[0m:     [07-05-2026 13:44:38] Application shutdown complete.
+[33mWARNING[0m:  [07-05-2026 13:57:05] chroma_server_nofile is set to 65535, but this is less than current soft limit of 1048575. chroma_server_nofile will not be set.
+[32mINFO[0m:     [07-05-2026 13:57:05] Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+[36mDEBUG[0m:    [07-05-2026 13:57:05] Starting component System
+[36mDEBUG[0m:    [07-05-2026 13:57:05] Starting component OpenTelemetryClient
+[36mDEBUG[0m:    [07-05-2026 13:57:05] Starting component SimpleAssignmentPolicy
+[36mDEBUG[0m:    [07-05-2026 13:57:05] Starting component SqliteDB
+[36mDEBUG[0m:    [07-05-2026 13:57:05] Starting component QuotaEnforcer
+[36mDEBUG[0m:    [07-05-2026 13:57:05] Starting component Posthog
+[36mDEBUG[0m:    [07-05-2026 13:57:05] Starting component LocalSegmentManager
+[36mDEBUG[0m:    [07-05-2026 13:57:05] Starting component SegmentAPI
+[32mINFO[0m:     [07-05-2026 13:57:05] Started server process [[36m8744[0m]
+[32mINFO[0m:     [07-05-2026 13:57:05] Waiting for application startup.
+[32mINFO[0m:     [07-05-2026 13:57:05] Application startup complete.
+[31mERROR[0m:    [07-05-2026 13:57:05] [Errno 48] error while attempting to bind on address ('::1', 8001, 0, 0): address already in use
+[32mINFO[0m:     [07-05-2026 13:57:05] Waiting for application shutdown.
+[36mDEBUG[0m:    [07-05-2026 13:57:05] Stopping component System
+[36mDEBUG[0m:    [07-05-2026 13:57:05] Stopping component SegmentAPI
+[36mDEBUG[0m:    [07-05-2026 13:57:05] Stopping component LocalSegmentManager
+[36mDEBUG[0m:    [07-05-2026 13:57:05] Stopping component Posthog
+[36mDEBUG[0m:    [07-05-2026 13:57:05] Stopping component QuotaEnforcer
+[36mDEBUG[0m:    [07-05-2026 13:57:05] Stopping component SqliteDB
+[36mDEBUG[0m:    [07-05-2026 13:57:05] Stopping component SimpleAssignmentPolicy
+[36mDEBUG[0m:    [07-05-2026 13:57:05] Stopping component OpenTelemetryClient
+[32mINFO[0m:     [07-05-2026 13:57:05] Application shutdown complete.
+[31mERROR[0m:    [07-05-2026 14:14:58] Failed to send telemetry event ClientCreateCollectionEvent: capture() takes 1 positional argument but 3 were given
+[32mINFO[0m:     [07-05-2026 14:14:58] ::1:62626 - "POST /api/v1/collections?tenant=default_tenant&database=default_database HTTP/1.1" 200
+[32mINFO[0m:     [07-05-2026 14:14:59] ::1:62626 - "POST /api/v1/collections/7ce032fd-332d-40fe-866a-4e671e9079d2/query HTTP/1.1" 200
+[33mWARNING[0m:  [07-05-2026 14:22:51] chroma_server_nofile is set to 65535, but this is less than current soft limit of 1048575. chroma_server_nofile will not be set.
+[32mINFO[0m:     [07-05-2026 14:22:51] Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+[36mDEBUG[0m:    [07-05-2026 14:22:51] Starting component System
+[36mDEBUG[0m:    [07-05-2026 14:22:51] Starting component OpenTelemetryClient
+[36mDEBUG[0m:    [07-05-2026 14:22:51] Starting component SimpleAssignmentPolicy
+[36mDEBUG[0m:    [07-05-2026 14:22:51] Starting component SqliteDB
+[36mDEBUG[0m:    [07-05-2026 14:22:51] Starting component QuotaEnforcer
+[36mDEBUG[0m:    [07-05-2026 14:22:51] Starting component Posthog
+[36mDEBUG[0m:    [07-05-2026 14:22:51] Starting component LocalSegmentManager
+[36mDEBUG[0m:    [07-05-2026 14:22:51] Starting component SegmentAPI
+[32mINFO[0m:     [07-05-2026 14:22:51] Started server process [[36m15539[0m]
+[32mINFO[0m:     [07-05-2026 14:22:51] Waiting for application startup.
+[32mINFO[0m:     [07-05-2026 14:22:51] Application startup complete.
+[31mERROR[0m:    [07-05-2026 14:22:51] [Errno 48] error while attempting to bind on address ('::1', 8001, 0, 0): address already in use
+[32mINFO[0m:     [07-05-2026 14:22:51] Waiting for application shutdown.
+[36mDEBUG[0m:    [07-05-2026 14:22:51] Stopping component System
+[36mDEBUG[0m:    [07-05-2026 14:22:51] Stopping component SegmentAPI
+[36mDEBUG[0m:    [07-05-2026 14:22:51] Stopping component LocalSegmentManager
+[36mDEBUG[0m:    [07-05-2026 14:22:51] Stopping component Posthog
+[36mDEBUG[0m:    [07-05-2026 14:22:51] Stopping component QuotaEnforcer
+[36mDEBUG[0m:    [07-05-2026 14:22:51] Stopping component SqliteDB
+[36mDEBUG[0m:    [07-05-2026 14:22:51] Stopping component SimpleAssignmentPolicy
+[36mDEBUG[0m:    [07-05-2026 14:22:51] Stopping component OpenTelemetryClient
+[32mINFO[0m:     [07-05-2026 14:22:51] Application shutdown complete.
+[33mWARNING[0m:  [07-05-2026 14:23:24] chroma_server_nofile is set to 65535, but this is less than current soft limit of 1048575. chroma_server_nofile will not be set.
+[32mINFO[0m:     [07-05-2026 14:23:24] Anonymized telemetry enabled. See                     https://docs.trychroma.com/telemetry for more information.
+[36mDEBUG[0m:    [07-05-2026 14:23:24] Starting component System
+[36mDEBUG[0m:    [07-05-2026 14:23:24] Starting component OpenTelemetryClient
+[36mDEBUG[0m:    [07-05-2026 14:23:24] Starting component SimpleAssignmentPolicy
+[36mDEBUG[0m:    [07-05-2026 14:23:24] Starting component SqliteDB
+[36mDEBUG[0m:    [07-05-2026 14:23:24] Starting component QuotaEnforcer
+[36mDEBUG[0m:    [07-05-2026 14:23:24] Starting component Posthog
+[36mDEBUG[0m:    [07-05-2026 14:23:24] Starting component LocalSegmentManager
+[36mDEBUG[0m:    [07-05-2026 14:23:24] Starting component SegmentAPI
+[32mINFO[0m:     [07-05-2026 14:23:24] Started server process [[36m15847[0m]
+[32mINFO[0m:     [07-05-2026 14:23:24] Waiting for application startup.
+[32mINFO[0m:     [07-05-2026 14:23:24] Application startup complete.
+[31mERROR[0m:    [07-05-2026 14:23:24] [Errno 48] error while attempting to bind on address ('::1', 8001, 0, 0): address already in use
+[32mINFO[0m:     [07-05-2026 14:23:24] Waiting for application shutdown.
+[36mDEBUG[0m:    [07-05-2026 14:23:24] Stopping component System
+[36mDEBUG[0m:    [07-05-2026 14:23:24] Stopping component SegmentAPI
+[36mDEBUG[0m:    [07-05-2026 14:23:24] Stopping component LocalSegmentManager
+[36mDEBUG[0m:    [07-05-2026 14:23:24] Stopping component Posthog
+[36mDEBUG[0m:    [07-05-2026 14:23:24] Stopping component QuotaEnforcer
+[36mDEBUG[0m:    [07-05-2026 14:23:24] Stopping component SqliteDB
+[36mDEBUG[0m:    [07-05-2026 14:23:24] Stopping component SimpleAssignmentPolicy
+[36mDEBUG[0m:    [07-05-2026 14:23:24] Stopping component OpenTelemetryClient
+[32mINFO[0m:     [07-05-2026 14:23:24] Application shutdown complete.
+[31mERROR[0m:    [07-05-2026 14:23:37] Failed to send telemetry event ClientCreateCollectionEvent: capture() takes 1 positional argument but 3 were given
+[32mINFO[0m:     [07-05-2026 14:23:37] ::1:65219 - "POST /api/v1/collections?tenant=default_tenant&database=default_database HTTP/1.1" 200
+[32mINFO[0m:     [07-05-2026 14:23:37] ::1:65219 - "POST /api/v1/collections/7ce032fd-332d-40fe-866a-4e671e9079d2/query HTTP/1.1" 200
+[32mINFO[0m:     [07-05-2026 15:51:12] ::1:55701 - "POST /api/v1/collections/7ce032fd-332d-40fe-866a-4e671e9079d2/query HTTP/1.1" 200
+[32mINFO[0m:     [07-05-2026 15:55:23] ::1:56822 - "POST /api/v1/collections/7ce032fd-332d-40fe-866a-4e671e9079d2/query HTTP/1.1" 200
+[32mINFO[0m:     [07-05-2026 15:58:08] ::1:57562 - "POST /api/v1/collections/7ce032fd-332d-40fe-866a-4e671e9079d2/query HTTP/1.1" 200

@@ -300,7 +300,6 @@ onMounted(() => {
 }
 
 .header-actions .el-button--primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   border: none;
 }
 
@@ -332,7 +331,7 @@ onMounted(() => {
 }
 
 .upload-actions .el-button--primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: rgba(0,0,0,.04);
   border: none;
 }
 
@@ -529,7 +528,7 @@ onMounted(() => {
 }
 
 .preview-header .el-button--primary {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: rgba(0,0,0,.04);
   border: none;
 }
 

@@ -2,8 +2,10 @@
   <div class="app-container">
     <el-header class="gradient-bg">
       <div class="header-left">
-        <div class="logo">📚</div>
-        <span class="title">知识库问答智能体</span>
+        <div class="logo">
+          <img src="./assets/satori.png" style="width: 40px;" alt="Satori" />
+        </div>
+        <span class="title">Satori</span>
       </div>
 
       <div class="header-center">
@@ -130,25 +132,27 @@ html, body, #app { height: 100%; }
 body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; }
 
 .gradient-bg {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: #fff;
+  border-bottom: 1px solid #e5e7eb;
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   padding: 0 24px;
-  min-height: 64px;
+  min-height: 56px;
 }
 
 .header-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 2px;
+  font-size: 18px;
 }
 
 .header-right {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 12px;
+  gap: 2px;
 }
 
 .header-tabs {
@@ -172,13 +176,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helv
 .header-left {
   display: flex;
   align-items: center;
-  gap: 12px;
 }
 
 .logo {
   width: 40px;
   height: 40px;
-  background: rgba(255,255,255,0.2);
+  /* background: rgba(255,255,255,0.2); */
   border-radius: 10px;
   display: flex;
   align-items: center;
@@ -187,9 +190,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helv
 }
 
 .title {
-  font-size: 20px;
-  font-weight: 600;
-  color: white;
+  font-size: 18px;
+  font-weight: 500;
+  color: #111827;
 }
 
 .header-right {
@@ -199,8 +202,9 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helv
 }
 
 .header-right .el-button {
-  background: rgba(255,255,255,0.15);
-  border: none;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  color: #111827;
 }
 
 .header-tabs {
@@ -228,7 +232,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helv
   gap: 16px;
 }
 .gradient-bg .header-tabs .el-tabs__item {
-  color: #fff !important;
   font-size: 15px;
   font-weight: 500;
   height: 44px;
@@ -236,16 +239,5 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helv
   padding: 0 8px;
   transition: color 0.2s ease;
   opacity: 1;
-}
-.gradient-bg .header-tabs .el-tabs__item:hover {
-  color: #fff !important;
-}
-.gradient-bg .header-tabs .el-tabs__item.is-active {
-  color: #fff !important;
-  font-weight: 600;
-}
-.gradient-bg .header-tabs .el-tabs__active-bar {
-  background: #fff !important;
-  height: 2px;
 }
 </style>
