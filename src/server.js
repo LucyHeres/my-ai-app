@@ -1,12 +1,24 @@
 import path from 'path';
 import fs from 'fs';
+import { randomUUID } from 'crypto';
 import express from 'express';
 import multer from 'multer';
 import 'dotenv/config';
 import { fileURLToPath } from 'url';
 import { ChatOpenAI } from '@langchain/openai';
 import { AIMessage, HumanMessage, SystemMessage, ToolMessage } from '@langchain/core/messages';
-import { initDb, saveMessage, loadHistory, saveDocument, loadDocuments, getDocument, deleteDocument } from './db/db.js';
+import {
+  initDb,
+  saveMessage,
+  loadHistory,
+  createConversation,
+  loadConversations,
+  deleteConversation,
+  saveDocument,
+  loadDocuments,
+  getDocument,
+  deleteDocument
+} from './db/db.js';
 import { createOutputSanitizer } from './utils/output_sanitize.js';
 import { genTextChunks } from './rag/rag.js';
 import { loadDocument } from './rag/rag_document_loader.js';
@@ -66,8 +78,6 @@ const MAX_HISTORY = Number.parseInt(process.env.MAX_HISTORY || '20', 10);
 const AGENT_NAME = process.env.AGENT_NAME;
 const AGENT_SYSTEM_PROMPT = process.env.AGENT_SYSTEM_PROMPT;
 const sanitizeOutput = createOutputSanitizer({ agentName: AGENT_NAME });
-
-initDb();
 
 const llm = new ChatOpenAI({
   apiKey: DEEPSEEK_API_KEY,
@@ -148,6 +158,10 @@ function contentToText(content) {
       .join('');
   }
   return '';
+}
+
+function genSessionId() {
+  return randomUUID();
 }
 
 async function executeToolCall({ toolCall, userId, fallbackQuery, res }) {
@@ -441,6 +455,88 @@ app.get('/documents/:id/download', (req, res) => {
   } catch (e) {
     console.error('[Download] 下载文档失败:', e?.message || String(e));
     return res.status(500).json({ ok: false, error: '下载失败' });
+  }
+});
+
+// 创建会话
+app.post('/conversations', (req, res) => {
+  try {
+    const userId = String(req.body?.user_id || req.query?.user_id || '').trim();
+    if (!userId) {
+      return res.status(400).json({ ok: false, error: 'user_id 不能为空' });
+    }
+
+    const sessionId = String(req.body?.session_id || req.query?.session_id || genSessionId()).trim();
+    if (!sessionId) {
+      return res.status(400).json({ ok: false, error: 'session_id 无效' });
+    }
+
+    const result = createConversation(userId, sessionId);
+    return res.json({ ok: true, ...result });
+  } catch (e) {
+    console.error('[Conversation] 创建会话失败:', e?.message || String(e));
+    return res.status(500).json({ ok: false, error: '创建会话失败' });
+  }
+});
+
+// 会话列表
+app.get('/conversations', (req, res) => {
+  try {
+    const userId = String(req.query?.user_id || '').trim();
+    if (!userId) {
+      return res.status(400).json({ ok: false, error: 'user_id 不能为空' });
+    }
+
+    const conversations = loadConversations(userId);
+    return res.json({ ok: true, conversations });
+  } catch (e) {
+    console.error('[Conversation] 获取会话列表失败:', e?.message || String(e));
+    return res.status(500).json({ ok: false, error: '获取会话列表失败' });
+  }
+});
+
+// 删除会话
+app.delete('/conversations/:id', (req, res) => {
+  try {
+    const userId = String(req.body?.user_id || req.query?.user_id || '').trim();
+    const sessionId = String(req.params.id || '').trim();
+    if (!userId) {
+      return res.status(400).json({ ok: false, error: 'user_id 不能为空' });
+    }
+    if (!sessionId) {
+      return res.status(400).json({ ok: false, error: 'session_id 不能为空' });
+    }
+
+    const result = deleteConversation(userId, sessionId);
+    if (!result.deleted) {
+      return res.status(404).json({ ok: false, error: '会话不存在' });
+    }
+
+    return res.json({ ok: true, session_id: sessionId, deleted: true });
+  } catch (e) {
+    console.error('[Conversation] 删除会话失败:', e?.message || String(e));
+    return res.status(500).json({ ok: false, error: '删除会话失败' });
+  }
+});
+
+// 获取会话消息历史
+app.get('/conversations/:id/messages', (req, res) => {
+  try {
+    const userId = String(req.query?.user_id || '').trim();
+    const sessionId = String(req.params.id || '').trim();
+    const limit = Number.parseInt(String(req.query?.limit || '100'), 10);
+    if (!userId) {
+      return res.status(400).json({ ok: false, error: 'user_id 不能为空' });
+    }
+    if (!sessionId) {
+      return res.status(400).json({ ok: false, error: 'session_id 不能为空' });
+    }
+
+    const history = loadHistory(userId, sessionId, Math.max(1, Math.min(limit, 300)));
+    return res.json({ ok: true, messages: history });
+  } catch (e) {
+    console.error('[Conversation] 获取会话消息失败:', e?.message || String(e));
+    return res.status(500).json({ ok: false, error: '获取会话消息失败' });
   }
 });
 

@@ -1,57 +1,109 @@
 <template>
   <div class="chat-container">
-    <div class="messages-container" ref="messagesContainer">
-      <div v-if="messages.length === 0" class="empty-state">
-        <div class="empty-icon">🤖</div>
-        <div class="empty-title">你好！我是智能助手</div>
-        <div class="empty-desc">有什么可以帮助你的吗？</div>
-      </div>
+    <div class="chat-layout">
+      <aside class="session-sidebar">
+        <div class="session-header">
+          <div class="session-title">会话列表</div>
+          <el-button size="small" @click="handleNewChat">+ 新建</el-button>
+        </div>
+        <div class="session-list">
+          <div
+            v-for="item in conversations"
+            :key="item.session_id"
+            class="session-item"
+            :class="{ active: item.session_id === currentSessionId }"
+            @click="handleSessionClick(item.session_id)"
+          >
+            <span class="session-item-text">{{ getConversationLabel(item) }}</span>
+            <el-button
+              class="session-item-delete"
+              type="danger"
+              text
+              size="small"
+              @click.stop="handleDeleteSession(item.session_id)"
+            >
+              删除
+            </el-button>
+          </div>
+          <div v-if="conversations.length === 0" class="session-empty">暂无历史会话</div>
+        </div>
+      </aside>
 
-      <div v-for="(msg, idx) in messages" :key="idx" class="message-box" :class="msg.role">
-        <!-- AI 消息：无气泡，宽度占满 -->
-        <template v-if="msg.role === 'ai'">
-          <div class="ai-message">
-            <details v-if="msg.toolCalls && msg.toolCalls.length > 0" class="thinking-panel">
-              <summary class="thinking-summary">
-                <span>已完成思考</span>
-                <span class="thinking-chevron">›</span>
-              </summary>
-              <div class="thinking-content">
-                <div v-for="(step, stepIdx) in msg.toolCalls" :key="stepIdx" class="thinking-step">
-                  <div class="thinking-line">
-                    <span class="thinking-label">工具：</span>
-                    <code>{{ step.name }}</code>
+      <section class="chat-main">
+        <div class="messages-container" ref="messagesContainer">
+          <div v-if="messages.length === 0" class="empty-state">
+            <div class="empty-icon">🤖</div>
+            <div class="empty-title">你好！我是Satori</div>
+            <div class="empty-desc">有什么可以帮助你的吗？</div>
+          </div>
+
+          <div v-for="(msg, idx) in messages" :key="idx" class="message-box" :class="msg.role">
+            <!-- AI 消息：无气泡，宽度占满 -->
+            <template v-if="msg.role === 'ai'">
+              <div class="ai-message">
+                <details v-if="msg.toolCalls && msg.toolCalls.length > 0" class="thinking-panel">
+                  <summary class="thinking-summary">
+                    <span>已完成思考</span>
+                    <span class="thinking-chevron">›</span>
+                  </summary>
+                  <div class="thinking-content">
+                    <div v-for="(step, stepIdx) in msg.toolCalls" :key="stepIdx" class="thinking-step">
+                      <div class="thinking-line">
+                        <span class="thinking-label">工具：</span>
+                        <code>{{ step.name }}</code>
+                      </div>
+                      <div class="thinking-line">
+                        <span class="thinking-label">参数：</span>
+                        <code>{{ formatToolArgs(step.args) }}</code>
+                      </div>
+                    </div>
                   </div>
-                  <div class="thinking-line">
-                    <span class="thinking-label">参数：</span>
-                    <code>{{ formatToolArgs(step.args) }}</code>
+                </details>
+                <div class="message-text markdown-body" v-html="renderMarkdown(msg.content)"></div>
+                <div v-if="msg.sources && msg.sources.length > 0 && msg.streamingComplete" class="sources-footer">
+                  <div class="sources-left">
+                    <span class="sources-label">数据来源：</span>
+                    <span v-for="(doc, docIdx) in uniqueSources(msg.sources)" :key="docIdx" class="source-doc">
+                      {{ doc.title || doc.filename }}
+                    </span>
+                  </div>
+                  <div class="sources-right">
+                    <el-button type="primary" link @click="showRecallDetails(msg.sources)">
+                      <el-icon><Document /></el-icon> 召回详情
+                    </el-button>
                   </div>
                 </div>
               </div>
-            </details>
-            <div class="message-text markdown-body" v-html="renderMarkdown(msg.content)"></div>
-            <div v-if="msg.sources && msg.sources.length > 0 && msg.streamingComplete" class="sources-footer">
-              <div class="sources-left">
-                <span class="sources-label">数据来源：</span>
-                <span v-for="(doc, docIdx) in uniqueSources(msg.sources)" :key="docIdx" class="source-doc">
-                  {{ doc.title || doc.filename }}
-                </span>
+            </template>
+            <!-- 用户消息：保留气泡 -->
+            <template v-else>
+              <div class="message-bubble user">
+                <div class="message-text">{{ msg.content }}</div>
               </div>
-              <div class="sources-right">
-                <el-button type="primary" link @click="showRecallDetails(msg.sources)">
-                  <el-icon><Document /></el-icon> 召回详情
-                </el-button>
+            </template>
+          </div>
+        </div>
+
+        <div class="input-area">
+          <div class="input-wrapper">
+            <div class="input-header">
+              <div class="input-meta">
+                <div class="model-name">{{ modelName }}</div>
+                <span v-if="!isCurrentPersisted(currentSessionId)" class="draft-tag">草稿会话（未入库）</span>
               </div>
+              <div class="input-tip">Enter 发送，Shift+Enter 换行</div>
             </div>
+            <el-input
+              v-model="inputMessage"
+              type="textarea"
+              :rows="3"
+              placeholder="输入问题，按 Enter 发送，Shift+Enter 换行"
+              @keydown="handleKeyDown"
+              :disabled="isSending"
+            />
           </div>
-        </template>
-        <!-- 用户消息：保留气泡 -->
-        <template v-else>
-          <div class="message-bubble user">
-            <div class="message-text">{{ msg.content }}</div>
-          </div>
-        </template>
-      </div>
+        </div>
+      </section>
     </div>
 
     <el-drawer
@@ -79,36 +131,16 @@
       </el-tabs>
     </el-drawer>
 
-    <div class="input-area">
-      <div class="input-wrapper">
-        <div class="input-header">
-          <!-- <el-checkbox v-model="ragEnabled" size="large">聊天中启用知识库</el-checkbox> -->
-          <div class="model-name">{{ modelName }}</div>
-          <el-button @click="handleNewChat">+ 新建对话</el-button>
-        </div>
-        <el-input
-          v-model="inputMessage"
-          type="textarea"
-          :rows="3"
-          placeholder="输入问题，按 Enter 发送，Shift+Enter 换行"
-          @keydown="handleKeyDown"
-          :disabled="isSending"
-        />
-       
-      </div>
-    </div>
   </div>
 </template>
 
 <script setup>
-import { ref, watch, nextTick, inject } from 'vue'
+import { ref, watch, nextTick, inject, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
-import { Right, Document } from '@element-plus/icons-vue'
+import { Document } from '@element-plus/icons-vue'
 import { marked } from 'marked'
 
 const globalState = inject('globalState')
-const getSessionIdByUser = inject('getSessionIdByUser')
-const newSessionForUser = inject('newSessionForUser')
 const RAG_ENABLED_KEY = 'rag_enabled'
 
 const messages = ref([])
@@ -121,6 +153,8 @@ const messagesContainer = ref(null)
 const drawerVisible = ref(false)
 const currentSources = ref([])
 const activeTab = ref('slices')
+const conversations = ref([])
+const currentSessionId = ref('')
 
 // 配置 marked
 marked.setOptions({
@@ -170,6 +204,76 @@ function scrollToBottom() {
   })
 }
 
+function mapHistoryToUI(history) {
+  return (history || []).map((item) => ({
+    role: item.role === 'assistant' ? 'ai' : 'user',
+    content: item.content || '',
+    sources: [],
+    toolCalls: [],
+    streamingComplete: true,
+  }))
+}
+
+function getConversationLabel(item) {
+  const text = String(item?.title || '').trim();
+  if (!text) return `会话 ${String(item?.session_id || '').slice(0, 8)}`;
+  return text.length > 20 ? `${text.slice(0, 20)}...` : text;
+}
+
+function genSessionId() {
+  if (crypto?.randomUUID) return crypto.randomUUID();
+  return `${Date.now()}_${Math.random().toString(16).slice(2)}`;
+}
+
+function isCurrentPersisted(sessionId) {
+  return conversations.value.some((c) => c.session_id === sessionId);
+}
+
+async function fetchConversations() {
+  const userId = globalState.user.id;
+  const res = await fetch(`/conversations?user_id=${encodeURIComponent(userId)}`);
+  if (!res.ok) throw new Error('获取会话列表失败');
+  const data = await res.json();
+  conversations.value = data.conversations || [];
+}
+
+async function loadSessionMessages(sessionId) {
+  if (!sessionId) {
+    messages.value = [];
+    return;
+  }
+  const userId = globalState.user.id;
+  const res = await fetch(`/conversations/${encodeURIComponent(sessionId)}/messages?user_id=${encodeURIComponent(userId)}&limit=200`);
+  if (!res.ok) throw new Error('获取会话消息失败');
+  const data = await res.json();
+  messages.value = mapHistoryToUI(data.messages);
+  scrollToBottom();
+}
+
+async function ensureConversationReady() {
+  await fetchConversations();
+  if (conversations.value.length === 0) {
+    currentSessionId.value = genSessionId();
+    messages.value = [];
+    return;
+  }
+
+  const exists = conversations.value.some((c) => c.session_id === currentSessionId.value);
+  if (!exists) {
+    currentSessionId.value = conversations.value[0].session_id;
+  }
+  await loadSessionMessages(currentSessionId.value);
+}
+
+async function handleSessionClick(sessionId) {
+  try {
+    currentSessionId.value = sessionId;
+    await loadSessionMessages(sessionId);
+  } catch (e) {
+    ElMessage.error(e?.message || '切换会话失败');
+  }
+}
+
 function handleKeyDown(event) {
   // Enter 发送，Shift+Enter 换行
   if (event.key === 'Enter' && !event.shiftKey) {
@@ -182,6 +286,10 @@ async function sendMessage() {
   const text = inputMessage.value.trim()
   if (!text || isSending.value) return
 
+  if (!currentSessionId.value) {
+    currentSessionId.value = genSessionId();
+  }
+
   messages.value.push({ role: 'user', content: text })
   inputMessage.value = ''
   isSending.value = true
@@ -193,7 +301,7 @@ async function sendMessage() {
 
     try {
       const userId = globalState.user.id
-      const sessionId = getSessionIdByUser(userId)
+      const sessionId = currentSessionId.value
       const rag = ragEnabled.value ? '&rag=1&rag_mode=lc' : ''
       const url = `/chat?message=${encodeURIComponent(text)}&user_id=${encodeURIComponent(userId)}&session_id=${encodeURIComponent(sessionId)}${rag}`
 
@@ -278,23 +386,160 @@ async function sendMessage() {
     ElMessage.error('消息发送失败')
   } finally {
     isSending.value = false
+    fetchConversations().catch(() => {})
   }
 }
 
-function handleNewChat() {
-  newSessionForUser(globalState.user.id)
-  messages.value = []
-  ElMessage.success('已创建新会话')
+async function handleNewChat() {
+  currentSessionId.value = genSessionId();
+  messages.value = [];
+  ElMessage.success('已新建草稿会话');
 }
+
+async function handleDeleteSession(targetSessionId) {
+  const sid = targetSessionId || currentSessionId.value;
+  if (!sid) return;
+  if (!window.confirm('确认删除当前会话？删除后不可恢复。')) return;
+
+  try {
+    if (!isCurrentPersisted(sid)) {
+      currentSessionId.value = genSessionId();
+      messages.value = [];
+      ElMessage.success('草稿会话已清空');
+      return;
+    }
+
+    const userId = globalState.user.id;
+    const res = await fetch(`/conversations/${encodeURIComponent(sid)}?user_id=${encodeURIComponent(userId)}`, {
+      method: 'DELETE',
+    });
+    if (!res.ok) throw new Error('删除会话失败');
+
+    await fetchConversations();
+    if (conversations.value.length === 0) {
+      currentSessionId.value = genSessionId();
+      messages.value = [];
+    } else {
+      currentSessionId.value = conversations.value[0].session_id;
+      await loadSessionMessages(currentSessionId.value);
+    }
+    ElMessage.success('会话已删除');
+  } catch (e) {
+    ElMessage.error(e?.message || '删除会话失败');
+  }
+}
+
+onMounted(() => {
+  ensureConversationReady().catch((e) => {
+    ElMessage.error(e?.message || '初始化会话失败');
+  });
+});
+
+watch(() => globalState.user.id, () => {
+  currentSessionId.value = '';
+  ensureConversationReady().catch((e) => {
+    ElMessage.error(e?.message || '加载会话失败');
+  });
+});
 </script>
 
 <style scoped>
 .chat-container {
   flex: 1;
   display: flex;
-  flex-direction: column;
   background: #f8fafc;
   height: 100%;
+}
+
+.chat-layout {
+  flex: 1;
+  display: flex;
+  min-height: 0;
+}
+
+.session-sidebar {
+  width: 260px;
+  background: #fff;
+  border-right: 1px solid #e5e7eb;
+  display: flex;
+  flex-direction: column;
+}
+
+.session-header {
+  padding: 12px;
+  border-bottom: 1px solid #f1f5f9;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.session-title {
+  font-size: 14px;
+  color: #334155;
+  font-weight: 600;
+}
+
+.session-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 8px;
+}
+
+.session-item {
+  width: 100%;
+  border-radius: 8px;
+  padding: 10px 12px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  color: #334155;
+  font-size: 13px;
+  line-height: 1.4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.session-item:hover {
+  background: #f8fafc;
+}
+
+.session-item.active {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.session-item-text {
+  flex: 1;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.session-item-delete {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.session-item:hover .session-item-delete,
+.session-item:focus-within .session-item-delete {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.session-empty {
+  color: #94a3b8;
+  font-size: 12px;
+  padding: 8px 10px;
+}
+
+.chat-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .messages-container {
@@ -613,6 +858,26 @@ function handleNewChat() {
   align-items: center;
   justify-content: space-between;
   margin-bottom: 12px;
+}
+
+.input-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.input-tip {
+  color: #9ca3af;
+  font-size: 12px;
+}
+
+.draft-tag {
+  font-size: 12px;
+  color: #0f766e;
+  background: #ecfeff;
+  border: 1px solid #ccfbf1;
+  border-radius: 999px;
+  padding: 2px 8px;
 }
 
 .input-footer {

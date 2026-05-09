@@ -7,6 +7,7 @@ export default defineConfig({
     proxy: {
       '/chat': 'http://localhost:8000',
       '/documents': 'http://localhost:8000',
+      '/conversations': 'http://localhost:8000',
       '/rag': 'http://localhost:8000'
     }
   }

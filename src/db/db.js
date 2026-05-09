@@ -11,8 +11,26 @@ function ensureDirForFile(filePath) {
 
 ensureDirForFile(DB_PATH);
 const db = new Database(DB_PATH);
+let dbInitialized = false;
 
 function initDb() {
+  if (dbInitialized) return;
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS conversations (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      title TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+  db.exec(`CREATE INDEX IF NOT EXISTS idx_conversations_user_updated ON conversations(user_id, updated_at, id);`);
+  const conversationCols = db.prepare(`PRAGMA table_info(conversations)`).all().map((r) => r.name);
+  if (!conversationCols.includes('title')) {
+    db.exec(`ALTER TABLE conversations ADD COLUMN title TEXT;`);
+  }
+
   db.exec(`
     CREATE TABLE IF NOT EXISTS messages (
       id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -84,10 +102,53 @@ function initDb() {
     );
   `);
   db.exec(`CREATE INDEX IF NOT EXISTS idx_rag_chunk_embeddings_user_id ON rag_chunk_embeddings(user_id, chunk_id);`);
+  dbInitialized = true;
 }
+
+// 先初始化表结构，再 prepare 语句，避免新表首次启动时报 "no such table"
+initDb();
 
 const stmtInsertMessage = db.prepare(
   `INSERT INTO messages (user_id, session_id, role, content) VALUES (?, ?, ?, ?)`
+);
+const stmtCreateConversation = db.prepare(
+  `INSERT OR IGNORE INTO conversations (id, user_id) VALUES (?, ?)`
+);
+const stmtTouchConversation = db.prepare(
+  `UPDATE conversations SET updated_at = CURRENT_TIMESTAMP WHERE id = ? AND user_id = ?`
+);
+const stmtSetConversationTitle = db.prepare(
+  `UPDATE conversations
+   SET title = ?
+   WHERE id = ? AND user_id = ? AND (title IS NULL OR title = '')`
+);
+const stmtLoadConversations = db.prepare(
+  `SELECT
+     c.id AS session_id,
+     c.title,
+     c.created_at,
+     c.updated_at,
+     (
+       SELECT m.content
+       FROM messages m
+       WHERE m.user_id = c.user_id AND m.session_id = c.id
+       ORDER BY m.id DESC
+       LIMIT 1
+     ) AS last_message
+   FROM conversations c
+   WHERE c.user_id = ?
+     AND EXISTS (
+       SELECT 1
+       FROM messages m2
+       WHERE m2.user_id = c.user_id AND m2.session_id = c.id
+     )
+   ORDER BY c.updated_at DESC, c.created_at DESC`
+);
+const stmtDeleteMessagesBySession = db.prepare(
+  `DELETE FROM messages WHERE user_id = ? AND session_id = ?`
+);
+const stmtDeleteConversation = db.prepare(
+  `DELETE FROM conversations WHERE id = ? AND user_id = ?`
 );
 const stmtLoadHistory = db.prepare(
   `SELECT role, content FROM messages WHERE user_id = ? AND session_id = ? ORDER BY id DESC LIMIT ?`
@@ -120,7 +181,15 @@ const stmtLoadChunksByDoc = db.prepare(
 );
 
 function saveMessage(userId, sessionId, role, content) {
+  stmtCreateConversation.run(sessionId, userId);
+  // 会话标题固定为首条用户消息，后续消息不再覆盖
+  if (role === 'user') {
+    const firstLine = String(content || '').trim().split('\n')[0] || '';
+    const title = firstLine.slice(0, 60);
+    if (title) stmtSetConversationTitle.run(title, sessionId, userId);
+  }
   stmtInsertMessage.run(userId, sessionId, role, content);
+  stmtTouchConversation.run(sessionId, userId);
 }
 
 function loadHistory(userId, sessionId, limit) {
@@ -163,11 +232,33 @@ function loadChunksByDoc(userId, docId) {
   return stmtLoadChunksByDoc.all(userId, docId);
 }
 
+function createConversation(userId, sessionId) {
+  stmtCreateConversation.run(sessionId, userId);
+  stmtTouchConversation.run(sessionId, userId);
+  return { session_id: sessionId };
+}
+
+function loadConversations(userId) {
+  return stmtLoadConversations.all(userId);
+}
+
+function deleteConversation(userId, sessionId) {
+  const tx = db.transaction(() => {
+    stmtDeleteMessagesBySession.run(userId, sessionId);
+    const result = stmtDeleteConversation.run(sessionId, userId);
+    return { deleted: result.changes > 0 };
+  });
+  return tx();
+}
+
 export {
   db,
   initDb,
   saveMessage,
   loadHistory,
+  createConversation,
+  loadConversations,
+  deleteConversation,
   saveDocument,
   loadDocuments,
   getDocument,

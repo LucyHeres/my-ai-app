@@ -8,13 +8,6 @@
         <span class="title">Satori</span>
       </div>
 
-      <div class="header-center">
-        <el-tabs v-model="currentPath" class="header-tabs" @tab-click="handleTabClick">
-          <el-tab-pane label="智能问答" name="/chat" />
-          <el-tab-pane label="知识库" name="/documents" />
-        </el-tabs>
-      </div>
-
       <div class="header-right">
         <el-button circle @click="handleSwitchUser">
           <el-icon><User /></el-icon>
@@ -28,12 +21,16 @@
           <component :is="Component" />
         </keep-alive>
       </router-view>
+
+      <el-button class="kb-fab" type="primary" @click="goKnowledgeBase">
+        {{ isDocumentsPage ? '返回聊天' : '知识库' }}
+      </el-button>
     </el-main>
   </div>
 </template>
 
 <script setup>
-import { ref, watch, reactive, provide } from 'vue'
+import { computed, reactive, provide } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 
@@ -98,23 +95,23 @@ function newSessionForUser(userId) {
   return sid
 }
 
-const currentPath = ref(route.path)
 const globalState = reactive({
   user: getCurrentUser(),
   modelName: '模型：未加载'
 })
+const isDocumentsPage = computed(() => route.path === '/documents')
 
 // 使用 provide 向子组件提供全局状态
 provide('globalState', globalState)
 provide('getSessionIdByUser', getSessionIdByUser)
 provide('newSessionForUser', newSessionForUser)
 
-watch(() => route.path, (path) => {
-  currentPath.value = path
-})
-
-function handleTabClick(pane) {
-  router.push(pane.props.name)
+function goKnowledgeBase() {
+  if (isDocumentsPage.value) {
+    router.push('/chat')
+    return
+  }
+  router.push('/documents')
 }
 
 async function handleSwitchUser() {
@@ -134,8 +131,8 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helv
 .gradient-bg {
   background: #fff;
   border-bottom: 1px solid #e5e7eb;
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  display: flex;
+  justify-content: space-between;
   align-items: center;
   padding: 0 24px;
   min-height: 56px;
@@ -153,10 +150,6 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helv
   align-items: center;
   justify-content: flex-end;
   gap: 2px;
-}
-
-.header-tabs {
-  --el-tabs-header-height: 44px;
 }
 
 .app-container {
@@ -207,37 +200,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helv
   color: #111827;
 }
 
-.header-tabs {
-  --el-tabs-header-height: 44px;
-  width: 100%;
-}
-
-.header-center {
-  min-width: 300px;
-  display: flex;
-  justify-content: center;
-  justify-self: center;
-}
-.header-tabs .el-tabs__header {
-  margin: 0;
-}
-.header-tabs .el-tabs__nav-wrap {
-  display: flex;
-  justify-content: center;
-}
-.header-tabs .el-tabs__nav-wrap::after {
-  display: none;
-}
-.header-tabs .el-tabs__nav {
-  gap: 16px;
-}
-.gradient-bg .header-tabs .el-tabs__item {
-  font-size: 15px;
-  font-weight: 500;
-  height: 44px;
-  line-height: 44px;
-  padding: 0 8px;
-  transition: color 0.2s ease;
-  opacity: 1;
+.kb-fab {
+  position: fixed;
+  left: 20px;
+  bottom: 20px;
+  z-index: 20;
 }
 </style>
